@@ -4,6 +4,7 @@ import { PROGRAM_ID, TOKEN_MINT } from '../utils/anchorClient';
 import { Program } from '@project-serum/anchor';
 import idl from '../utils/idl.json';
 import { IconInfo, IconPrice, IconSupply, IconSlope, IconWallet, IconCopy, IconExternal, StatusBadge, LoadingSpinner } from './Icons';
+import CurveVisualization from './CurveVisualization';
 
 const connection = new Connection('https://api.devnet.solana.com', 'confirmed');
 const BONDING_CURVE_SEED = Buffer.from('bonding_curve');
@@ -104,6 +105,18 @@ const PoolInfo = () => {
                                 <p className="text-3xl font-bold text-white">{calculateCurrentPrice().toFixed(6)} <span className="text-lg text-indigo-300">SOL</span></p>
                             </div>
                             <StatusBadge status="active" />
+                        </div>
+
+                        {/* Bonding Curve Visualization */}
+                        <div className="mt-5 pt-4 border-t border-indigo-800/30">
+                            <h4 className="text-sm font-medium text-indigo-300 mb-3">Bonding Curve</h4>
+                            <CurveVisualization
+                                initialPrice={poolData.initialPrice}
+                                slope={poolData.slope}
+                                currentSupply={poolData.supply}
+                                height="200px"
+                                curveType="sigmoid"
+                            />
                         </div>
                     </div>
 

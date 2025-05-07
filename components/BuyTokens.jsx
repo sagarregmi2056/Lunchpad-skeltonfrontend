@@ -16,6 +16,7 @@ import {
     NetworkBadge,
     IconExternal
 } from './Icons';
+import CurveVisualization from './CurveVisualization';
 
 const BONDING_CURVE_SEED = Buffer.from('bonding_curve');
 
@@ -30,6 +31,7 @@ const BuyTokens = () => {
     const [mounted, setMounted] = useState(false);
     const [fetchingPrice, setFetchingPrice] = useState(true);
     const [fetchError, setFetchError] = useState(null);
+    const [curveParams, setCurveParams] = useState(null);
 
     // Handle wallet adapter hydration
     useEffect(() => {
@@ -67,6 +69,14 @@ const BuyTokens = () => {
 
                 const price = initialPrice + (slope * supply);
                 setCurrentPrice(price);
+
+                // Store curve parameters for visualization
+                setCurveParams({
+                    initialPrice,
+                    slope,
+                    supply
+                });
+
                 console.log('Current price calculated:', price);
             } catch (error) {
                 console.error('Error fetching current price:', error);
@@ -194,11 +204,28 @@ const BuyTokens = () => {
                                 <NetworkBadge network="devnet" />
                             </div>
                         </div>
+
+                        {/* Add Bonding Curve Visualization */}
+                        {currentPrice !== null && !fetchingPrice && !fetchError && (
+                            <div className="mt-4 pt-4 border-t border-indigo-800/30">
+                                <div className="flex justify-between items-center mb-2">
+                                    <h4 className="text-sm font-medium text-indigo-300">Bonding Curve</h4>
+                                    <span className="text-xs text-indigo-400">Hover to see prices</span>
+                                </div>
+                                <CurveVisualization
+                                    initialPrice={curveParams?.initialPrice || 0.001}
+                                    slope={curveParams?.slope || 0.0001}
+                                    currentSupply={curveParams?.supply || 1000}
+                                    height="180px"
+                                    curveType="sigmoid"
+                                />
+                            </div>
+                        )}
                     </div>
 
-                    <div className="space-y-5 bg-gray-800/40 backdrop-blur-sm p-5 rounded-xl border border-gray-700/50 shadow-md">
+                    <div className="space-y-5 bg-gradient-to-br from-gray-900/60 to-gray-800/60 backdrop-blur-sm p-5 rounded-xl border border-gray-700/50 shadow-md">
                         <div>
-                            <label htmlFor="amount" className="block text-sm font-medium text-gray-300 mb-2">
+                            <label htmlFor="amount" className="block text-sm font-medium text-indigo-300 mb-2">
                                 Amount to Buy
                             </label>
                             <div className="relative rounded-md shadow-sm">
@@ -218,9 +245,9 @@ const BuyTokens = () => {
                         </div>
 
                         {estimatedCost !== null && currentPrice !== null && (
-                            <div className="bg-gray-800/80 p-4 rounded-lg border border-gray-700">
+                            <div className="bg-gradient-to-br from-gray-800/80 to-gray-900/80 p-4 rounded-lg border border-gray-700/80 shadow-inner">
                                 <div className="flex justify-between items-center">
-                                    <span className="text-sm font-medium text-gray-300">Estimated Cost:</span>
+                                    <span className="text-sm font-medium text-indigo-300">Estimated Cost:</span>
                                     <span className="text-lg font-semibold text-white">
                                         {estimatedCost.toFixed(6)} SOL
                                     </span>
@@ -271,7 +298,7 @@ const BuyTokens = () => {
                         <button
                             onClick={handleBuyTokens}
                             disabled={loading || !amount || currentPrice === null}
-                            className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-5 py-3 rounded-lg font-semibold text-sm hover:from-purple-500 hover:to-indigo-500 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg transform hover:-translate-y-0.5 active:translate-y-0"
+                            className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-5 py-3 rounded-lg font-semibold text-sm hover:from-purple-500 hover:to-indigo-500 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg transform hover:-translate-y-0.5 active:translate-y-0 border border-purple-500/30"
                         >
                             {loading ? (
                                 <div className="flex items-center justify-center">
@@ -282,7 +309,7 @@ const BuyTokens = () => {
                         </button>
                     </div>
 
-                    <div className="text-xs text-gray-500 p-3 bg-gray-800/30 rounded-lg border border-gray-700/30">
+                    <div className="text-xs text-gray-400 p-4 bg-gradient-to-br from-indigo-900/20 to-gray-800/20 rounded-lg border border-indigo-800/30 backdrop-blur-sm">
                         <div className="flex items-start space-x-2">
                             <IconInfo className="h-4 w-4 text-indigo-400 mt-0.5 flex-shrink-0" />
                             <p>

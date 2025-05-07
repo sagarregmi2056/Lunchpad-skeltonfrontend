@@ -74,7 +74,7 @@ export default function Home() {
                     </div>
                 )}
 
-                <div className="card glass">
+                <div className="card glass bg-gradient-to-br from-gray-900/80 to-gray-800/80 border border-gray-700/50 shadow-lg">
                     <div className="nav-tabs overflow-x-auto thin-scrollbar">
                         <div className="flex min-w-full">
                             {tabs.map((tab) => (
