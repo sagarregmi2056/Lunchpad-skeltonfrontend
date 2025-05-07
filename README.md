@@ -1,36 +1,119 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Solana Launchpad DEX
+
+A decentralized exchange (DEX) and launchpad platform built on Solana, featuring a bonding curve mechanism for token sales.
+
+## Features
+
+- **Token Creation**: Create new SPL tokens with metadata
+- **Bonding Curve**: Automatic price discovery mechanism
+- **Buy/Sell Interface**: User-friendly interface for token trading
+- **Real-time Balance**: Track your token balance
+- **Pool Information**: View detailed information about the bonding curve pool
+
+## Technology Stack
+
+- **Frontend**: Next.js, React, TailwindCSS
+- **Blockchain**: Solana (Devnet)
+- **Smart Contracts**: Anchor Framework
+- **Token Standard**: Solana Program Library (SPL)
+- **Wallet Integration**: Solana Wallet Adapter (Phantom, Solflare, Backpack)
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- Node.js (v16+)
+- npm or yarn
+- Solana CLI (optional, for deployment)
+- A Solana wallet (Phantom recommended)
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Installation
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/yourusername/solana-launchpad-dex.git
+   cd solana-launchpad-dex
+   ```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+2. Install dependencies:
+   ```bash
+   npm install
+   # or
+   yarn install
+   ```
 
-## Learn More
+3. Start the development server:
+   ```bash
+   npm run dev
+   # or
+   yarn dev
+   ```
 
-To learn more about Next.js, take a look at the following resources:
+4. Open [http://localhost:3000](http://localhost:3000) in your browser
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Smart Contract Deployment
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+The smart contract is already deployed to Solana Devnet at address: `ExiyW5RS1e4XxjxeZHktijRhnYF6sJYzfmdzU85gFbS4`
 
-## Deploy on Vercel
+If you want to deploy your own version:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+1. Build the Anchor program:
+   ```bash
+   anchor build
+   ```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+2. Deploy to Solana Devnet:
+   ```bash
+   anchor deploy --provider.cluster devnet
+   ```
+
+3. Update the `PROGRAM_ID` in `utils/anchorClient.js` with your new program ID
+
+## Usage Guide
+
+### Creating a Token (Admin)
+
+1. Connect your wallet
+2. Navigate to the "Create Token" tab
+3. Fill in the token details:
+   - Token Name
+   - Token Symbol
+   - Initial Price (in SOL)
+   - Price Slope (in SOL)
+4. Click "Create Token"
+5. Approve the transaction in your wallet
+
+### Buying Tokens
+
+1. Connect your wallet
+2. Navigate to the "Buy Tokens" tab
+3. Enter the amount of tokens you want to buy
+4. Review the estimated cost
+5. Click "Buy Tokens"
+6. Approve the transaction in your wallet
+
+### Selling Tokens
+
+1. Connect your wallet
+2. Navigate to the "Sell Tokens" tab
+3. Enter the amount of tokens you want to sell
+4. Click "Sell Tokens"
+5. Approve the transaction in your wallet
+
+## How Bonding Curves Work
+
+A bonding curve is a mathematical curve that defines the relationship between a token's price and its supply. In this application:
+
+- The price increases as more tokens are purchased (positive slope)
+- The price decreases as tokens are sold back to the curve
+- The formula used is: `Price = InitialPrice + (Slope * Supply)`
+
+This creates a fair and transparent pricing mechanism that automatically adjusts based on demand.
+
+## License
+
+MIT License
+
+## Contact
+
+For questions or support, please open an issue on the GitHub repository or contact the development team.
