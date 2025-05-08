@@ -17,6 +17,11 @@ const BONDING_CURVE_SEED = Buffer.from('bonding_curve');
 // Local storage key for user tokens
 const USER_TOKENS_KEY = 'userCreatedTokens';
 
+// Get Solana explorer URL for a token
+export const getExplorerUrl = (address, cluster = 'devnet') => {
+  return `https://explorer.solana.com/address/${address}?cluster=${cluster}`;
+};
+
 // Function to save created token
 export const saveCreatedToken = (walletAddress, tokenData) => {
   if (typeof window === 'undefined') return;
@@ -36,6 +41,8 @@ export const saveCreatedToken = (walletAddress, tokenData) => {
     if (!exists) {
       existingTokens[walletAddress].push({
         ...tokenData,
+        explorerUrl: getExplorerUrl(tokenData.mint),
+        bondingCurveUrl: tokenData.bondingCurve ? getExplorerUrl(tokenData.bondingCurve) : null,
         createdAt: new Date().toISOString()
       });
     }
@@ -211,10 +218,10 @@ export const initializeBondingCurve = async (wallet, initialPrice, slope, custom
     const tokenMintToUse = customTokenMint || TOKEN_MINT;
     console.log('Using token mint:', tokenMintToUse.toString());
     
-    // Find the PDA for the bonding curve - we need a unique one for each token
-    const tokenMintBuffer = tokenMintToUse.toBuffer();
+    // Fix the PDA derivation to match what the program expects
+    // Just use BONDING_CURVE_SEED without the token mint
     const [bondingCurvePDA] = await PublicKey.findProgramAddress(
-      [BONDING_CURVE_SEED, tokenMintBuffer],
+      [BONDING_CURVE_SEED],
       program.programId
     );
     
@@ -259,10 +266,24 @@ export const initializeBondingCurve = async (wallet, initialPrice, slope, custom
       })
       .rpc();
 
+    // Save token creation info to localStorage
+    const walletAddress = walletPubkey.toString();
+    const tokenData = {
+      mint: tokenMintToUse.toString(),
+      bondingCurve: bondingCurvePDA.toString(),
+      initialPrice: initialPrice.toString(),
+      slope: slope.toString(),
+      txSignature: tx
+    };
+
+    saveCreatedToken(walletAddress, tokenData);
+
     return { 
       success: true, 
       signature: tx, 
-      address: bondingCurvePDA.toString() 
+      address: bondingCurvePDA.toString(),
+      explorerUrl: getExplorerUrl(tokenMintToUse.toString()),
+      bondingCurveUrl: getExplorerUrl(bondingCurvePDA.toString())
     };
   } catch (error) {
     console.error('Error initializing bonding curve:', error);
