@@ -81,17 +81,25 @@ const CreateToken = () => {
                 console.log('Slope in Lamports:', slopeInLamports);
 
                 // Initialize the bonding curve
-                const tx = await initializeBondingCurve(
+                const result = await initializeBondingCurve(
                     wallet,
                     priceInLamports,
                     slopeInLamports
                 );
 
-                setStatus(`Token created and initialized successfully!\nMint address: ${result.mint}\nTransaction: ${tx}`);
-                setTokenName('');
-                setTokenSymbol('');
-                setInitialPrice('1');
-                setSlope('0.1');
+                if (result.success) {
+                    const statusMessage = result.message
+                        ? `Token created successfully!\nMint address: ${result.mint}\nBonding curve: ${result.message}`
+                        : `Token created and initialized successfully!\nMint address: ${result.mint}\nTransaction: ${result.signature}`;
+
+                    setStatus(statusMessage);
+                    setTokenName('');
+                    setTokenSymbol('');
+                    setInitialPrice('1');
+                    setSlope('0.1');
+                } else {
+                    throw new Error(result.error || "Failed to initialize bonding curve");
+                }
             } else {
                 throw new Error(result.error);
             }

@@ -164,6 +164,22 @@ export const initializeBondingCurve = async (wallet, initialPrice, slope) => {
       program.programId
     );
 
+    // Check if the account already exists
+    try {
+      const accountInfo = await connection.getAccountInfo(bondingCurvePDA);
+      
+      if (accountInfo !== null) {
+        console.log('Bonding curve already initialized:', bondingCurvePDA.toString());
+        return { 
+          success: true, 
+          message: 'Bonding curve already exists', 
+          address: bondingCurvePDA.toString() 
+        };
+      }
+    } catch (err) {
+      console.log('Error checking account, will try to create:', err);
+    }
+
     // Convert wallet.publicKey to PublicKey if it's not already
     const walletPubkey = wallet.publicKey instanceof PublicKey 
       ? wallet.publicKey 
@@ -187,7 +203,11 @@ export const initializeBondingCurve = async (wallet, initialPrice, slope) => {
       })
       .rpc();
 
-    return tx;
+    return { 
+      success: true, 
+      signature: tx, 
+      address: bondingCurvePDA.toString() 
+    };
   } catch (error) {
     console.error('Error initializing bonding curve:', error);
     throw error;
