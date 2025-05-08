@@ -1,7 +1,7 @@
 import { createMetadataAccountV3 } from '@metaplex-foundation/mpl-token-metadata';
 import { createUmi } from '@metaplex-foundation/umi-bundle-defaults';
-import { none } from '@metaplex-foundation/umi';
-import { fromWeb3JsPublicKey, toWeb3JsInstruction } from '@metaplex-foundation/umi-web3js-adapters';
+import { none, publicKey as publicKeyUmi, struct, string } from '@metaplex-foundation/umi';
+import { fromWeb3JsPublicKey, toWeb3JsInstruction, fromWeb3JsTransaction } from '@metaplex-foundation/umi-web3js-adapters';
 import { mplTokenMetadata } from '@metaplex-foundation/mpl-token-metadata';
 import { PublicKey, Connection } from '@solana/web3.js';
 
@@ -20,37 +20,65 @@ export const createTokenMetadata = async (
         }
 
         // Create base Umi instance
-        const umi = createUmi(connection.rpcEndpoint).use(mplTokenMetadata());
+        const umi = createUmi(connection.rpcEndpoint)
+            .use(mplTokenMetadata());
 
         // Convert wallet public key to UMI format
         const walletPubkey = wallet.publicKey instanceof PublicKey 
             ? wallet.publicKey 
             : new PublicKey(wallet.publicKey);
         const walletUmi = fromWeb3JsPublicKey(walletPubkey);
-        console.log('Wallet Pubkey:', walletPubkey);
+        console.log('Wallet Pubkey:', walletPubkey.toBase58());
 
-        // Set up the wallet adapter as the signer
+        // Create a proper UMI identity with all required methods
         umi.identity = {
             publicKey: walletUmi,
-            signMessage: wallet.signMessage,
-            signTransaction: wallet.signTransaction,
+            signMessage: async (message) => {
+                return await wallet.signMessage(message);
+            },
+            signTransaction: async (transaction) => {
+                return await wallet.signTransaction(transaction);
+            },
+            signAllTransactions: async (transactions) => {
+                if (wallet.signAllTransactions) {
+                    return await wallet.signAllTransactions(transactions);
+                }
+                throw new Error('Wallet does not support signAllTransactions');
+            },
         };
+        
         umi.payer = umi.identity;
-        console.log('Umi Identity:', umi.identity);
+        console.log('Umi Identity:', umi.identity.publicKey);
 
         // Convert the mint public key to UMI format
         const mintPublicKey = mint instanceof PublicKey ? mint : new PublicKey(mint);
         const mintUmi = fromWeb3JsPublicKey(mintPublicKey);
         console.log('Mint Umi:', mintUmi);
 
-        // Create metadata arguments
+        // Create metadata arguments with all required fields
         const metadataArgs = {
             mint: mintUmi,
             authority: walletUmi,
+            name,
+            symbol,
+            uri: uri || '',
+            sellerFeeBasisPoints: 0,
+            creators: none(),
+            collection: none(),
+            uses: none(),
+        };
+
+        // Create the metadata instruction with proper context
+        const builder = createMetadataAccountV3(umi, {
+            metadata: umi.payer.publicKey,
+            mint: mintUmi,
+            mintAuthority: walletUmi,
+            payer: walletUmi,
+            updateAuthority: walletUmi,
             data: {
                 name,
                 symbol,
-                uri,
+                uri: uri || '',
                 sellerFeeBasisPoints: 0,
                 creators: none(),
                 collection: none(),
@@ -58,18 +86,18 @@ export const createTokenMetadata = async (
             },
             isMutable: true,
             collectionDetails: none(),
-        };
+        });
+        
+        // Get instructions
+        const instructions = await builder.getInstructions();
+        console.log('Instruction count:', instructions.length);
 
-        // Create the metadata instruction
-        const builder = await createMetadataAccountV3(umi, metadataArgs).getInstructions();
-        console.log('Builder:', builder);
-
-        if (!builder || builder.length === 0) {
+        if (!instructions || instructions.length === 0) {
             throw new Error('Failed to create metadata instruction');
         }
 
         // Convert the UMI instruction to a web3.js instruction
-        const web3Instruction = toWeb3JsInstruction(builder[0]);
+        const web3Instruction = toWeb3JsInstruction(instructions[0]);
         return web3Instruction;
     } catch (error) {
         console.error('Error in createTokenMetadata:', error);

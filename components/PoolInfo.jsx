@@ -13,6 +13,7 @@ const PoolInfo = () => {
     const [loading, setLoading] = useState(true);
     const [poolData, setPoolData] = useState(null);
     const [error, setError] = useState(null);
+    const [copySuccess, setCopySuccess] = useState('');
 
     useEffect(() => {
         const fetchPoolInfo = async () => {
@@ -78,143 +79,190 @@ const PoolInfo = () => {
         return poolData.initialPrice + (poolData.slope * poolData.supply);
     };
 
+    const copyToClipboard = (text, type) => {
+        navigator.clipboard.writeText(text);
+        setCopySuccess(`${type} copied!`);
+        setTimeout(() => setCopySuccess(''), 2000);
+    };
+
     return (
         <div className="space-y-6 text-gray-200">
             <div className="flex items-center mb-2">
-                <IconInfo className="h-5 w-5 mr-2 text-indigo-400" />
-                <h2 className="text-xl font-bold text-white">Bonding Curve Pool Information</h2>
+                <IconInfo className="h-5 w-5 mr-2 text-purple-400" />
+                <h2 className="text-xl font-bold text-white">Token Information</h2>
             </div>
 
             {loading ? (
-                <div className="flex justify-center py-8">
-                    <LoadingSpinner size="lg" color="indigo" />
+                <div className="flex justify-center py-10">
+                    <LoadingSpinner size="lg" color="purple" />
                 </div>
             ) : error ? (
-                <div className="status-error p-4 rounded-lg shadow-lg">
+                <div className="bg-red-900/30 border border-red-700/50 p-4 rounded-lg shadow-lg">
                     <div className="flex items-center">
                         <IconInfo className="h-5 w-5 mr-2 text-red-400" />
-                        <p className="text-sm font-medium">{error}</p>
+                        <p className="text-sm font-medium text-red-300">{error}</p>
                     </div>
                 </div>
             ) : poolData ? (
                 <div className="space-y-6">
-                    <div className="bg-indigo-900/20 backdrop-blur-md p-5 rounded-xl border border-indigo-800/30 shadow-lg">
+                    <div className="bg-gradient-to-br from-purple-900/30 to-indigo-900/30 backdrop-blur-md p-6 rounded-xl border border-purple-800/30 shadow-lg">
                         <div className="flex flex-wrap items-center justify-between gap-4">
                             <div>
-                                <h3 className="text-sm font-medium text-indigo-300 mb-1">Current Market Price</h3>
-                                <p className="text-3xl font-bold text-white">{calculateCurrentPrice().toFixed(6)} <span className="text-lg text-indigo-300">SOL</span></p>
+                                <h3 className="text-sm font-medium text-purple-300 mb-1">Current Market Price</h3>
+                                <p className="text-3xl font-bold text-gradient">{calculateCurrentPrice().toFixed(6)} <span className="text-lg text-purple-300">SOL</span></p>
                             </div>
                             <StatusBadge status="active" />
                         </div>
 
                         {/* Bonding Curve Visualization */}
-                        <div className="mt-5 pt-4 border-t border-indigo-800/30">
-                            <h4 className="text-sm font-medium text-indigo-300 mb-3">Bonding Curve</h4>
+                        <div className="mt-5 pt-4 border-t border-purple-800/30">
+                            <h4 className="text-sm font-medium text-purple-300 mb-3">Price Curve</h4>
                             <CurveVisualization
                                 initialPrice={poolData.initialPrice}
                                 slope={poolData.slope}
                                 currentSupply={poolData.supply}
-                                height="200px"
+                                height="240px"
                                 curveType="sigmoid"
                             />
                         </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="bg-gradient-to-br from-purple-900/20 to-indigo-900/20 p-5 rounded-xl shadow-md border border-indigo-800/40 hover:shadow-lg transition-shadow duration-200">
-                            <h3 className="text-sm font-medium text-indigo-300 mb-2">Total Supply</h3>
-                            <p className="text-2xl font-bold text-white">{poolData.supply.toLocaleString()} <span className="text-sm text-indigo-300">tokens</span></p>
-                            <div className="mt-3 flex items-center text-xs text-indigo-400">
-                                <IconSupply className="h-4 w-4 mr-1" />
-                                Number of tokens in circulation
+                        <div className="bg-gradient-to-br from-purple-900/20 to-indigo-900/20 p-6 rounded-xl shadow-lg border border-purple-800/40 hover:shadow-purple-800/10 transition-shadow duration-200">
+                            <div className="flex items-start">
+                                <IconSupply className="h-5 w-5 mr-3 text-purple-400 mt-1" />
+                                <div>
+                                    <h3 className="text-sm font-medium text-purple-300 mb-2">Total Supply</h3>
+                                    <p className="text-2xl font-bold text-white">{poolData.supply.toLocaleString()} <span className="text-sm text-purple-300">tokens</span></p>
+                                    <div className="mt-2 text-xs text-purple-400/80">
+                                        Number of tokens currently in circulation
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
-                        <div className="bg-gradient-to-br from-purple-900/20 to-indigo-900/20 p-5 rounded-xl shadow-md border border-indigo-800/40 hover:shadow-lg transition-shadow duration-200">
-                            <h3 className="text-sm font-medium text-indigo-300 mb-2">Initial Price</h3>
-                            <p className="text-2xl font-bold text-white">{poolData.initialPrice.toFixed(6)} <span className="text-sm text-indigo-300">SOL</span></p>
-                            <div className="mt-3 flex items-center text-xs text-indigo-400">
-                                <IconPrice className="h-4 w-4 mr-1" />
-                                Starting price when supply was 0
+                        <div className="bg-gradient-to-br from-purple-900/20 to-indigo-900/20 p-6 rounded-xl shadow-lg border border-purple-800/40 hover:shadow-purple-800/10 transition-shadow duration-200">
+                            <div className="flex items-start">
+                                <IconPrice className="h-5 w-5 mr-3 text-purple-400 mt-1" />
+                                <div>
+                                    <h3 className="text-sm font-medium text-purple-300 mb-2">Initial Price</h3>
+                                    <p className="text-2xl font-bold text-white">{poolData.initialPrice.toFixed(6)} <span className="text-sm text-purple-300">SOL</span></p>
+                                    <div className="mt-2 text-xs text-purple-400/80">
+                                        Base price when token supply is zero
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
-                        <div className="bg-gradient-to-br from-purple-900/20 to-indigo-900/20 p-5 rounded-xl shadow-md border border-indigo-800/40 hover:shadow-lg transition-shadow duration-200">
-                            <h3 className="text-sm font-medium text-indigo-300 mb-2">Price Slope</h3>
-                            <p className="text-2xl font-bold text-white">{poolData.slope.toFixed(6)} <span className="text-sm text-indigo-300">SOL</span></p>
-                            <div className="mt-3 flex items-center text-xs text-indigo-400">
-                                <IconSlope className="h-4 w-4 mr-1" />
-                                Price increase per token purchased
+                        <div className="bg-gradient-to-br from-purple-900/20 to-indigo-900/20 p-6 rounded-xl shadow-lg border border-purple-800/40 hover:shadow-purple-800/10 transition-shadow duration-200">
+                            <div className="flex items-start">
+                                <IconSlope className="h-5 w-5 mr-3 text-purple-400 mt-1" />
+                                <div>
+                                    <h3 className="text-sm font-medium text-purple-300 mb-2">Price Slope</h3>
+                                    <p className="text-2xl font-bold text-white">{poolData.slope.toFixed(6)} <span className="text-sm text-purple-300">SOL</span></p>
+                                    <div className="mt-2 text-xs text-purple-400/80">
+                                        Rate of price increase per token
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
-                        <div className="bg-gradient-to-br from-purple-900/20 to-indigo-900/20 p-5 rounded-xl shadow-md border border-indigo-800/40 hover:shadow-lg transition-shadow duration-200">
-                            <h3 className="text-sm font-medium text-indigo-300 mb-2">Market Liquidity</h3>
-                            <p className="text-2xl font-bold text-white">{(poolData.initialPrice * poolData.supply + 0.5 * poolData.slope * poolData.supply * poolData.supply).toFixed(4)} <span className="text-sm text-indigo-300">SOL</span></p>
-                            <div className="mt-3 flex items-center text-xs text-indigo-400">
-                                <IconWallet className="h-4 w-4 mr-1" />
-                                Estimated total locked value
+                        <div className="bg-gradient-to-br from-purple-900/20 to-indigo-900/20 p-6 rounded-xl shadow-lg border border-purple-800/40 hover:shadow-purple-800/10 transition-shadow duration-200">
+                            <div className="flex items-start">
+                                <IconWallet className="h-5 w-5 mr-3 text-purple-400 mt-1" />
+                                <div>
+                                    <h3 className="text-sm font-medium text-purple-300 mb-2">Market Liquidity</h3>
+                                    <p className="text-2xl font-bold text-white">{(poolData.initialPrice * poolData.supply + 0.5 * poolData.slope * poolData.supply * poolData.supply).toFixed(4)} <span className="text-sm text-purple-300">SOL</span></p>
+                                    <div className="mt-2 text-xs text-purple-400/80">
+                                        Estimated total SOL value locked in curve
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <div className="mt-6">
-                        <h3 className="text-base font-semibold text-white mb-3 flex items-center">
-                            <IconInfo className="h-4 w-4 mr-2 text-indigo-400" />
-                            Technical Details
-                        </h3>
-                        <div className="bg-gray-800/60 backdrop-blur-md p-4 rounded-xl space-y-3 border border-gray-700/60 shadow-md">
-                            <div>
-                                <span className="text-xs font-medium text-gray-400">Token Mint:</span>
-                                <div className="flex items-center mt-1">
-                                    <p className="text-xs font-mono text-purple-300 break-all">{poolData.tokenMint}</p>
+                    <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm rounded-xl border border-gray-700/50 shadow-lg overflow-hidden">
+                        <div className="bg-purple-900/20 px-6 py-4 border-b border-purple-800/30">
+                            <h3 className="font-medium text-white flex items-center">
+                                <IconInfo className="h-4 w-4 mr-2 text-purple-400" />
+                                Token Details
+                            </h3>
+                        </div>
+
+                        <div className="p-6 space-y-4">
+                            <div className="relative">
+                                {copySuccess === 'Token mint' && (
+                                    <div className="absolute right-0 top-0 text-xs text-green-400 bg-green-900/40 px-2 py-1 rounded animate-fade-in-out">
+                                        Copied!
+                                    </div>
+                                )}
+                                <span className="text-sm font-medium text-purple-300">Token Mint Address</span>
+                                <div className="mt-1.5 p-3 bg-gray-800/80 rounded-lg border border-gray-700/60 flex justify-between items-center">
+                                    <p className="text-xs font-mono text-gray-300 truncate">{poolData.tokenMint}</p>
                                     <button
-                                        className="ml-2 text-indigo-400 hover:text-indigo-300 transition-colors"
-                                        onClick={() => {
-                                            navigator.clipboard.writeText(poolData.tokenMint);
-                                        }}
+                                        className="ml-2 text-purple-400 hover:text-purple-300 transition-colors p-1.5 rounded-full hover:bg-purple-900/30"
+                                        onClick={() => copyToClipboard(poolData.tokenMint, 'Token mint')}
                                     >
                                         <IconCopy className="h-4 w-4" />
                                     </button>
                                 </div>
                             </div>
-                            <div>
-                                <span className="text-xs font-medium text-gray-400">Authority:</span>
-                                <div className="flex items-center mt-1">
-                                    <p className="text-xs font-mono text-purple-300 break-all">{poolData.authority}</p>
+
+                            <div className="relative">
+                                {copySuccess === 'Authority' && (
+                                    <div className="absolute right-0 top-0 text-xs text-green-400 bg-green-900/40 px-2 py-1 rounded animate-fade-in-out">
+                                        Copied!
+                                    </div>
+                                )}
+                                <span className="text-sm font-medium text-purple-300">Authority</span>
+                                <div className="mt-1.5 p-3 bg-gray-800/80 rounded-lg border border-gray-700/60 flex justify-between items-center">
+                                    <p className="text-xs font-mono text-gray-300 truncate">{poolData.authority}</p>
                                     <button
-                                        className="ml-2 text-indigo-400 hover:text-indigo-300 transition-colors"
-                                        onClick={() => {
-                                            navigator.clipboard.writeText(poolData.authority);
-                                        }}
+                                        className="ml-2 text-purple-400 hover:text-purple-300 transition-colors p-1.5 rounded-full hover:bg-purple-900/30"
+                                        onClick={() => copyToClipboard(poolData.authority, 'Authority')}
                                     >
                                         <IconCopy className="h-4 w-4" />
                                     </button>
                                 </div>
                             </div>
-                            <div>
-                                <span className="text-xs font-medium text-gray-400">Explorer Links:</span>
-                                <div className="flex mt-1.5 space-x-3">
+
+                            <div className="pt-3 border-t border-gray-700/40">
+                                <span className="text-sm font-medium text-purple-300">Explorer Links</span>
+                                <div className="mt-2 flex flex-wrap gap-3">
                                     <a
                                         href={`https://explorer.solana.com/address/${poolData.tokenMint}?cluster=devnet`}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="text-xs font-medium bg-indigo-900/40 text-indigo-300 hover:bg-indigo-800/60 px-2.5 py-1.5 rounded-md transition-colors flex items-center"
+                                        className="flex items-center px-3 py-2 rounded-lg text-sm font-medium bg-purple-900/30 text-purple-300 hover:bg-purple-800/40 transition-colors border border-purple-800/40"
                                     >
-                                        <IconExternal className="h-3.5 w-3.5 mr-1" />
-                                        Token Mint
+                                        <IconExternal className="h-4 w-4 mr-1.5" />
+                                        View Token on Explorer
                                     </a>
+
                                     <a
-                                        href={`https://explorer.solana.com/address/${poolData.authority}?cluster=devnet`}
+                                        href={`https://explorer.solana.com/address/${PROGRAM_ID.toString()}?cluster=devnet`}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="text-xs font-medium bg-indigo-900/40 text-indigo-300 hover:bg-indigo-800/60 px-2.5 py-1.5 rounded-md transition-colors flex items-center"
+                                        className="flex items-center px-3 py-2 rounded-lg text-sm font-medium bg-indigo-900/30 text-indigo-300 hover:bg-indigo-800/40 transition-colors border border-indigo-800/40"
                                     >
-                                        <IconExternal className="h-3.5 w-3.5 mr-1" />
-                                        Authority
+                                        <IconExternal className="h-4 w-4 mr-1.5" />
+                                        View Program on Explorer
                                     </a>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+
+                    <div className="bg-gradient-to-br from-purple-900/10 to-indigo-900/10 p-5 rounded-xl border border-purple-800/30 shadow-md">
+                        <h3 className="text-sm font-medium text-purple-300 mb-3">How Bonding Curves Work</h3>
+                        <p className="text-gray-300 text-sm">
+                            This token uses a dynamic pricing model based on a bonding curve. The price increases as more tokens are purchased and decreases as tokens are sold back to the curve. All transactions are executed on-chain with SOL as the base currency.
+                        </p>
+                        <div className="mt-3 grid grid-cols-2 gap-3 text-xs text-gray-400">
+                            <div>• Token price is determined by the curve formula</div>
+                            <div>• Tokens are minted when purchased</div>
+                            <div>• Tokens are burned when sold back</div>
+                            <div>• All transactions are executed instantly</div>
                         </div>
                     </div>
                 </div>

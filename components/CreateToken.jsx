@@ -113,90 +113,105 @@ const CreateToken = () => {
                     <LoadingSpinner size="lg" color="indigo" />
                 </div>
             ) : !publicKey ? (
-                <div className="flex justify-center py-6">
-                    <div className="wallet-button-wrapper">
-                        <WalletMultiButton />
+                <div className="flex flex-col items-center py-8 space-y-4">
+                    <div className="bg-gray-800/80 backdrop-blur-md p-8 rounded-xl border border-purple-800/30 max-w-md w-full text-center shadow-lg">
+                        <IconCoin className="h-8 w-8 mx-auto mb-4 text-purple-500" />
+                        <h3 className="text-xl font-bold text-white mb-2">Create Your Own Token</h3>
+                        <p className="text-gray-300 mb-6">Connect your wallet to create and launch your own token with a bonding curve</p>
+                        <div className="wallet-button-wrapper">
+                            <WalletMultiButton />
+                        </div>
                     </div>
                 </div>
             ) : (
-                <div className="space-y-5">
-                    <div className="bg-gray-800 rounded-lg p-3.5 border border-gray-700">
-                        <p className="text-xs text-gray-400">Admin Wallet</p>
-                        <p className="text-gray-300 font-mono text-xs truncate">{publicKey.toString()}</p>
-                    </div>
-
-                    <div className="space-y-4">
-                        <div>
-                            <label htmlFor="tokenName" className="block text-sm font-medium text-gray-300">
-                                Token Name
-                            </label>
-                            <input
-                                id="tokenName"
-                                type="text"
-                                value={tokenName}
-                                onChange={(e) => setTokenName(e.target.value)}
-                                placeholder="Enter token name"
-                                className="mt-1 block w-full px-4 py-2.5 rounded-lg border border-gray-700 bg-gray-800 text-white placeholder-gray-500 focus:ring-purple-500 focus:border-purple-500"
-                                disabled={loading}
-                            />
+                <div className="space-y-6">
+                    <div className="bg-gradient-to-br from-purple-900/20 to-indigo-900/20 backdrop-blur-sm rounded-xl border border-purple-800/30 shadow-lg p-6">
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                            <div>
+                                <h3 className="text-lg font-bold text-white mb-1">Launch Your Token</h3>
+                                <p className="text-gray-400 text-sm">Fill in the details below to create your token</p>
+                            </div>
+                            <div className="bg-gray-800/60 rounded-lg p-2.5 border border-gray-700/50">
+                                <p className="text-xs text-gray-400">Connected as</p>
+                                <p className="text-gray-300 font-mono text-xs truncate">{publicKey.toString()}</p>
+                            </div>
                         </div>
 
-                        <div>
-                            <label htmlFor="tokenSymbol" className="block text-sm font-medium text-gray-300">
-                                Token Symbol
-                            </label>
-                            <input
-                                id="tokenSymbol"
-                                type="text"
-                                value={tokenSymbol}
-                                onChange={(e) => setTokenSymbol(e.target.value)}
-                                placeholder="Enter token symbol"
-                                className="mt-1 block w-full px-4 py-2.5 rounded-lg border border-gray-700 bg-gray-800 text-white placeholder-gray-500 focus:ring-purple-500 focus:border-purple-500"
-                                disabled={loading}
-                            />
-                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <div>
+                                <label htmlFor="tokenName" className="block text-sm font-medium text-purple-300 mb-1.5">
+                                    Token Name
+                                </label>
+                                <input
+                                    id="tokenName"
+                                    type="text"
+                                    value={tokenName}
+                                    onChange={(e) => setTokenName(e.target.value)}
+                                    placeholder="Enter token name"
+                                    className="block w-full px-4 py-3 rounded-lg border border-gray-700/80 bg-gray-800/60 text-white placeholder-gray-500 focus:ring-purple-500 focus:border-purple-500 shadow-inner transition-all duration-200"
+                                    disabled={loading}
+                                />
+                            </div>
 
-                        <div>
-                            <label htmlFor="initialPrice" className="block text-sm font-medium text-gray-300">
-                                Initial Price (in SOL)
-                            </label>
-                            <input
-                                id="initialPrice"
-                                type="number"
-                                step="0.1"
-                                value={initialPrice}
-                                onChange={(e) => setInitialPrice(e.target.value)}
-                                placeholder="Enter initial price"
-                                className="mt-1 block w-full px-4 py-2.5 rounded-lg border border-gray-700 bg-gray-800 text-white placeholder-gray-500 focus:ring-purple-500 focus:border-purple-500"
-                                disabled={loading}
-                            />
-                        </div>
+                            <div>
+                                <label htmlFor="tokenSymbol" className="block text-sm font-medium text-purple-300 mb-1.5">
+                                    Token Symbol
+                                </label>
+                                <input
+                                    id="tokenSymbol"
+                                    type="text"
+                                    value={tokenSymbol}
+                                    onChange={(e) => setTokenSymbol(e.target.value)}
+                                    placeholder="Enter token symbol"
+                                    className="block w-full px-4 py-3 rounded-lg border border-gray-700/80 bg-gray-800/60 text-white placeholder-gray-500 focus:ring-purple-500 focus:border-purple-500 shadow-inner transition-all duration-200"
+                                    disabled={loading}
+                                />
+                            </div>
 
-                        <div>
-                            <label htmlFor="slope" className="block text-sm font-medium text-gray-300">
-                                Price Slope (in SOL)
-                            </label>
-                            <input
-                                id="slope"
-                                type="number"
-                                step="0.1"
-                                value={slope}
-                                onChange={(e) => setSlope(e.target.value)}
-                                placeholder="Enter slope"
-                                className="mt-1 block w-full px-4 py-2.5 rounded-lg border border-gray-700 bg-gray-800 text-white placeholder-gray-500 focus:ring-purple-500 focus:border-purple-500"
-                                disabled={loading}
-                            />
-                            <p className="mt-1 text-xs text-gray-400">
-                                The rate at which the token price increases with each purchase
-                            </p>
+                            <div>
+                                <label htmlFor="initialPrice" className="block text-sm font-medium text-purple-300 mb-1.5">
+                                    Initial Price (in SOL)
+                                </label>
+                                <input
+                                    id="initialPrice"
+                                    type="number"
+                                    step="0.01"
+                                    min="0.01"
+                                    value={initialPrice}
+                                    onChange={(e) => setInitialPrice(e.target.value)}
+                                    placeholder="Enter initial price"
+                                    className="block w-full px-4 py-3 rounded-lg border border-gray-700/80 bg-gray-800/60 text-white placeholder-gray-500 focus:ring-purple-500 focus:border-purple-500 shadow-inner transition-all duration-200"
+                                    disabled={loading}
+                                />
+                            </div>
+
+                            <div>
+                                <label htmlFor="slope" className="block text-sm font-medium text-purple-300 mb-1.5">
+                                    Price Slope (in SOL)
+                                </label>
+                                <input
+                                    id="slope"
+                                    type="number"
+                                    step="0.01"
+                                    min="0.01"
+                                    value={slope}
+                                    onChange={(e) => setSlope(e.target.value)}
+                                    placeholder="Enter slope"
+                                    className="block w-full px-4 py-3 rounded-lg border border-gray-700/80 bg-gray-800/60 text-white placeholder-gray-500 focus:ring-purple-500 focus:border-purple-500 shadow-inner transition-all duration-200"
+                                    disabled={loading}
+                                />
+                                <p className="mt-1 text-xs text-purple-400/80">
+                                    The rate at which price increases with each purchase
+                                </p>
+                            </div>
                         </div>
 
                         {status && (
-                            <div className={`p-3 rounded-lg text-sm ${status.includes('Error')
-                                ? 'status-error'
+                            <div className={`mt-6 p-4 rounded-lg text-sm ${status.includes('Error')
+                                ? 'bg-red-900/30 border border-red-700/50 text-red-300'
                                 : status.includes('successfully')
-                                    ? 'status-success'
-                                    : 'status-info'
+                                    ? 'bg-green-900/30 border border-green-700/50 text-green-300'
+                                    : 'bg-blue-900/30 border border-blue-700/50 text-blue-300'
                                 }`}>
                                 <div className="flex items-start">
                                     {status.includes('Error') ? (
@@ -211,47 +226,56 @@ const CreateToken = () => {
                             </div>
                         )}
 
-                        <div className="flex space-x-4">
+                        <div className="flex flex-col sm:flex-row gap-4 mt-6">
                             <button
                                 onClick={handleCreateToken}
                                 disabled={loading || !tokenName || !tokenSymbol || !initialPrice || !slope}
-                                className="flex-1 bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-5 py-2.5 rounded-lg font-semibold text-sm hover:from-purple-500 hover:to-indigo-500 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                                className="flex-1 bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-6 py-3 rounded-lg font-semibold text-sm shadow-lg hover:shadow-purple-700/20 disabled:opacity-50 disabled:cursor-not-allowed transition transform hover:-translate-y-0.5 active:translate-y-0"
                             >
                                 {loading ? (
                                     <div className="flex items-center justify-center">
                                         <LoadingSpinner size="sm" color="white" />
                                         <span className="ml-2">Processing...</span>
                                     </div>
-                                ) : 'Create Token'}
+                                ) : 'Launch Token'}
                             </button>
                             <button
                                 onClick={disconnect}
-                                className="bg-gray-700 hover:bg-gray-600 text-gray-300 hover:text-white px-4 py-2.5 rounded-lg font-medium text-sm transition duration-200 shadow-md"
+                                className="px-6 py-3 rounded-lg font-medium text-sm bg-gray-700/80 hover:bg-gray-600/80 text-gray-300 hover:text-white transition-colors shadow-md"
                             >
                                 Disconnect
                             </button>
                         </div>
                     </div>
+
+                    {/* Information Box */}
+                    <div className="bg-gray-800/40 backdrop-blur-sm p-5 rounded-xl border border-gray-700/50 text-sm">
+                        <h3 className="font-medium text-purple-300 mb-3 flex items-center">
+                            <IconInfo className="h-4 w-4 mr-2 text-purple-400" />
+                            How Bonding Curves Work
+                        </h3>
+                        <p className="text-gray-400 mb-3">
+                            Bonding curves automatically set token prices based on supply. As more tokens are purchased, the price increases following a mathematical formula.
+                        </p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                            <div className="bg-gray-900/60 p-3 rounded-lg border border-gray-700/50">
+                                <h4 className="text-xs font-medium text-purple-300 mb-1">Initial Price</h4>
+                                <p className="text-xs text-gray-400">
+                                    The starting price of your token before any purchases are made.
+                                </p>
+                            </div>
+                            <div className="bg-gray-900/60 p-3 rounded-lg border border-gray-700/50">
+                                <h4 className="text-xs font-medium text-purple-300 mb-1">Price Slope</h4>
+                                <p className="text-xs text-gray-400">
+                                    Determines how quickly the price rises as more tokens are bought.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             )}
-
-            {/* Phantom Wallet Devnet Instructions */}
-            <div className="mt-6 bg-gray-800/60 p-4 rounded-lg border border-gray-700/50 text-sm">
-                <h3 className="font-medium text-gray-300 mb-2 flex items-center">
-                    <IconInfo className="h-4 w-4 mr-2 text-indigo-400" />
-                    How to Switch to Devnet in Phantom
-                </h3>
-                <ol className="list-decimal pl-5 space-y-1.5 text-gray-400">
-                    <li>Open Phantom wallet extension</li>
-                    <li>Click on the gear icon (Settings) in the bottom right</li>
-                    <li>Select "Developer Settings"</li>
-                    <li>Toggle "Automatically Approve API Requests" (optional)</li>
-                    <li>Select "Devnet" under "Network"</li>
-                    <li>Close settings and return to this page</li>
-                </ol>
-            </div>
         </div>
     );
-};
+}
 
 export default CreateToken;

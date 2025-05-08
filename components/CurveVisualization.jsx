@@ -43,8 +43,8 @@ const CurveVisualization = ({
     // Calculate data points for the bonding curve
     const generateCurveData = () => {
         // Generate data points for the curve
-        const maxSupply = Math.max(3000, currentSupply * 2); // Ensure we show at least double the current supply
-        const dataPoints = 100; // Number of points to plot
+        const maxSupply = Math.max(5000, currentSupply * 2); // Ensure we show more future growth potential
+        const dataPoints = 120; // Increased for smoother curve
 
         // Create labels and data arrays
         const labels = [];
@@ -73,11 +73,11 @@ const CurveVisualization = ({
     // Find the closest index to current supply for highlighting
     let currentIndex = 0;
     if (currentSupply > 0) {
-        const maxSupply = Math.max(3000, currentSupply * 2);
-        currentIndex = Math.round((currentSupply / maxSupply) * 100);
+        const maxSupply = Math.max(5000, currentSupply * 2);
+        currentIndex = Math.round((currentSupply / maxSupply) * 120);
     }
 
-    // Chart configuration
+    // Chart configuration with improved styling
     const options = {
         responsive: true,
         maintainAspectRatio: false,
@@ -85,22 +85,37 @@ const CurveVisualization = ({
             intersect: false,
             mode: 'index'
         },
+        animation: {
+            duration: 1000,
+            easing: 'easeOutQuart'
+        },
         scales: {
             x: {
                 display: true,
                 title: {
                     display: true,
                     text: 'Supply',
-                    color: 'rgba(156, 163, 175, 0.9)'
+                    color: 'rgba(179, 183, 197, 0.9)',
+                    font: {
+                        size: 11,
+                        weight: '500'
+                    }
                 },
                 grid: {
                     display: false,
                 },
                 ticks: {
-                    color: 'rgba(156, 163, 175, 0.7)',
+                    color: 'rgba(179, 183, 197, 0.7)',
+                    maxRotation: 0,
+                    autoSkip: true,
+                    font: {
+                        size: 10
+                    },
                     callback: function (value, index, values) {
                         // Show fewer ticks for readability
-                        if (index % 20 === 0) return labels[index];
+                        if (index % 30 === 0) {
+                            return Number(labels[index]).toLocaleString();
+                        }
                         return '';
                     }
                 }
@@ -110,15 +125,23 @@ const CurveVisualization = ({
                 title: {
                     display: true,
                     text: 'Price (SOL)',
-                    color: 'rgba(156, 163, 175, 0.9)'
+                    color: 'rgba(179, 183, 197, 0.9)',
+                    font: {
+                        size: 11,
+                        weight: '500'
+                    }
                 },
                 grid: {
-                    color: 'rgba(55, 65, 81, 0.3)',
+                    color: 'rgba(71, 85, 105, 0.2)',
+                    lineWidth: 0.5
                 },
                 ticks: {
-                    color: 'rgba(156, 163, 175, 0.7)',
+                    color: 'rgba(179, 183, 197, 0.7)',
+                    font: {
+                        size: 10
+                    },
                     callback: function (value) {
-                        return value.toFixed(4);
+                        return value.toFixed(5);
                     }
                 }
             }
@@ -128,17 +151,35 @@ const CurveVisualization = ({
                 display: false
             },
             tooltip: {
-                backgroundColor: 'rgba(17, 24, 39, 0.9)',
-                borderColor: 'rgba(107, 114, 128, 0.5)',
+                backgroundColor: 'rgba(22, 27, 42, 0.95)',
+                borderColor: 'rgba(147, 51, 234, 0.5)',
                 borderWidth: 1,
-                titleColor: 'rgb(167, 139, 250)',
-                bodyColor: 'rgb(209, 213, 219)',
+                titleColor: 'rgb(179, 183, 197)',
+                bodyColor: 'rgb(236, 237, 244)',
+                titleFont: {
+                    weight: 'normal',
+                    size: 12
+                },
+                bodyFont: {
+                    size: 13,
+                    weight: 'bold'
+                },
+                padding: 10,
+                cornerRadius: 8,
+                boxPadding: 5,
+                usePointStyle: true,
                 callbacks: {
                     title: (tooltipItems) => {
-                        return `Supply: ${tooltipItems[0].label}`;
+                        return `Supply: ${Number(tooltipItems[0].label).toLocaleString()} tokens`;
                     },
                     label: (context) => {
                         return `Price: ${context.parsed.y.toFixed(6)} SOL`;
+                    },
+                    labelPointStyle: () => {
+                        return {
+                            pointStyle: 'circle',
+                            rotation: 0
+                        };
                     }
                 }
             }
@@ -151,12 +192,17 @@ const CurveVisualization = ({
             {
                 label: 'Bonding Curve',
                 data: priceData,
-                borderColor: 'rgba(139, 92, 246, 0.8)',
-                backgroundColor: 'rgba(124, 58, 237, 0.1)',
+                borderColor: 'rgba(147, 51, 234, 0.8)',
+                backgroundColor: ctx => {
+                    const gradient = ctx.chart.ctx.createLinearGradient(0, 0, 0, ctx.chart.height);
+                    gradient.addColorStop(0, 'rgba(147, 51, 234, 0.2)');
+                    gradient.addColorStop(1, 'rgba(147, 51, 234, 0.0)');
+                    return gradient;
+                },
                 borderWidth: 2,
                 pointRadius: 0,
-                pointHoverRadius: 5,
-                pointHoverBackgroundColor: 'rgb(139, 92, 246)',
+                pointHoverRadius: 6,
+                pointHoverBackgroundColor: 'rgb(147, 51, 234)',
                 pointHoverBorderColor: 'rgb(255, 255, 255)',
                 pointHoverBorderWidth: 2,
                 tension: 0.4,
@@ -175,17 +221,32 @@ const CurveVisualization = ({
             borderColor: 'rgba(59, 130, 246, 0)',
             pointBackgroundColor: 'rgba(244, 114, 182, 1)',
             pointBorderColor: 'rgba(255, 255, 255, 1)',
-            pointRadius: 5,
-            pointHoverRadius: 7,
+            pointRadius: 6,
+            pointHoverRadius: 8,
+            pointStyle: 'circle',
+            pointBorderWidth: 2,
+            hoverBorderWidth: 3
         });
     }
 
     return (
-        <div className="relative">
-            <div style={{ height }} className="w-full">
+        <div className="relative rounded-lg overflow-hidden bg-gradient-to-br from-gray-900/80 to-gray-800/80 border border-gray-700/30">
+            <div style={{ height }} className="w-full px-2 pt-2 pb-4">
                 <Line options={options} data={data} />
             </div>
-            <div className="absolute bottom-0 left-0 right-0 h-1/3 bg-gradient-to-t from-gray-900/60 to-transparent pointer-events-none"></div>
+
+            {/* Animated gradient overlay */}
+            <div className="absolute inset-0 pointer-events-none opacity-30 animated-gradient-bg" style={{ mixBlendMode: 'soft-light' }}></div>
+
+            {/* Bottom fade */}
+            <div className="absolute bottom-0 left-0 right-0 h-1/6 bg-gradient-to-t from-gray-900/90 to-transparent pointer-events-none"></div>
+
+            {/* Current price indicator */}
+            {currentSupply > 0 && (
+                <div className="absolute top-3 right-3 bg-purple-900/70 backdrop-blur-sm rounded-md px-3 py-1.5 border border-purple-800/50 text-xs font-medium text-purple-200 shadow-lg">
+                    Current: {currentPosition.y.toFixed(6)} SOL
+                </div>
+            )}
         </div>
     );
 };

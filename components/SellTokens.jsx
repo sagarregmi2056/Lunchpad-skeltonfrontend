@@ -3,8 +3,9 @@ import { useWallet } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { useAnchorProgram, TOKEN_MINT } from '../utils/anchorClient';
 import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
-import { SystemProgram, PublicKey } from '@solana/web3.js';
+import { SystemProgram, PublicKey, LAMPORTS_PER_SOL } from '@solana/web3.js';
 import { BN } from '@project-serum/anchor';
+import { IconInfo, IconError, IconSuccess, LoadingSpinner, IconSell, IconLock } from './Icons';
 
 const BONDING_CURVE_SEED = Buffer.from('bonding_curve');
 
@@ -17,6 +18,10 @@ const SellTokens = () => {
     const { publicKey } = useWallet();
     const [mounted, setMounted] = useState(false);
     const [currentPrice, setCurrentPrice] = useState(null);
+    const [fetchingPrice, setFetchingPrice] = useState(true);
+    const [fetchError, setFetchError] = useState(null);
+    const [priceImpact, setPriceImpact] = useState(null);
+    const [tokenBalance, setTokenBalance] = useState(0);
 
     // Handle wallet adapter hydration
     useEffect(() => {
@@ -29,6 +34,9 @@ const SellTokens = () => {
             if (!program || !bondingCurvePDA) return;
 
             try {
+                setFetchingPrice(true);
+                setFetchError(null);
+
                 // Get the bonding curve account data
                 const bondingCurveAccount = await program.account.bondingCurve.fetch(bondingCurvePDA);
 
@@ -38,14 +46,20 @@ const SellTokens = () => {
                 const totalSupplyBN = bondingCurveAccount.totalSupply.toString();
 
                 // Calculate the current price - convert strings to numbers safely
-                const initialPrice = parseFloat(initialPriceBN) / 1e9;
-                const slope = parseFloat(slopeBN) / 1e9;
+                const initialPrice = parseFloat(initialPriceBN) / LAMPORTS_PER_SOL;
+                const slope = parseFloat(slopeBN) / LAMPORTS_PER_SOL;
                 const supply = parseFloat(totalSupplyBN) / 1e9;
 
                 const price = initialPrice + (slope * supply);
                 setCurrentPrice(price);
+
+                // Store curve parameters for calculations
+                setCurveParams({ initialPrice, slope, supply });
             } catch (error) {
                 console.error('Error fetching current price:', error);
+                setFetchError('Failed to fetch price data');
+            } finally {
+                setFetchingPrice(false);
             }
         };
 
@@ -56,17 +70,56 @@ const SellTokens = () => {
         return () => clearInterval(intervalId);
     }, [program, bondingCurvePDA]);
 
+    // Fetch user's token balance
+    useEffect(() => {
+        const fetchTokenBalance = async () => {
+            if (!publicKey || !program || !userTokenAccount) return;
+
+            try {
+                const accountInfo = await program.provider.connection.getTokenAccountBalance(userTokenAccount);
+                setTokenBalance(accountInfo.value.uiAmount);
+            } catch (error) {
+                console.error('Error fetching token balance:', error);
+                setTokenBalance(0);
+            }
+        };
+
+        if (publicKey && program && userTokenAccount) {
+            fetchTokenBalance();
+            // Set up periodic refresh
+            const intervalId = setInterval(fetchTokenBalance, 15000);
+            return () => clearInterval(intervalId);
+        }
+    }, [publicKey, program, userTokenAccount]);
+
+    // Store curve parameters for calculations
+    const [curveParams, setCurveParams] = useState(null);
+
     // Calculate the estimated return when amount changes
     useEffect(() => {
-        if (!currentPrice || !amount || isNaN(amount) || parseFloat(amount) <= 0) {
+        if (!currentPrice || !amount || isNaN(amount) || parseFloat(amount) <= 0 || !curveParams) {
             setEstimatedReturn(null);
+            setPriceImpact(null);
             return;
         }
 
-        // Simple estimation based on current price
-        const returnAmount = parseFloat(amount) * currentPrice;
+        const amountNum = parseFloat(amount);
+        const { initialPrice, slope, supply } = curveParams;
+
+        // Calculate new price after selling
+        const newSupply = Math.max(0, supply - amountNum);
+        const newPrice = initialPrice + (slope * newSupply);
+
+        // Calculate average price received and total return
+        const avgPrice = (currentPrice + newPrice) / 2;
+        const returnAmount = amountNum * avgPrice;
+
+        // Calculate price impact percentage (negative for selling)
+        const priceImpactValue = ((newPrice - currentPrice) / currentPrice) * 100;
+
         setEstimatedReturn(returnAmount);
-    }, [amount, currentPrice]);
+        setPriceImpact(priceImpactValue);
+    }, [amount, currentPrice, curveParams]);
 
     const handleSellTokens = async () => {
         try {
@@ -76,6 +129,10 @@ const SellTokens = () => {
 
             if (!amount || isNaN(amount) || parseFloat(amount) <= 0) {
                 throw new Error('Please enter a valid amount');
+            }
+
+            if (parseFloat(amount) > tokenBalance) {
+                throw new Error(`You only have ${tokenBalance} tokens available to sell`);
             }
 
             setLoading(true);
@@ -106,8 +163,13 @@ const SellTokens = () => {
                 })
                 .rpc();
 
-            setTransactionStatus('Transaction successful! Signature: ' + tx.slice(0, 8) + '...');
+            setTransactionStatus(`Transaction successful! You've sold ${amount} tokens.`);
             setAmount('');
+
+            // Add short delay then clear status
+            setTimeout(() => {
+                setTransactionStatus('');
+            }, 10000);
         } catch (error) {
             console.error('Error selling tokens:', error);
             setTransactionStatus(`Error: ${error.message}`);
@@ -116,156 +178,167 @@ const SellTokens = () => {
         }
     };
 
+    const handleMaxClick = () => {
+        if (tokenBalance > 0) {
+            setAmount(tokenBalance.toString());
+        }
+    };
+
     return (
         <div className="space-y-5 text-gray-200">
-            <h2 className="text-xl font-bold text-white flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-indigo-400" viewBox="0 0 20 20" fill="currentColor">
-                    <path d="M8 5a1 1 0 100 2h5.586l-1.293 1.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L13.586 5H8zM12 15a1 1 0 100-2H6.414l1.293-1.293a1 1 0 10-1.414-1.414l-3 3a1 1 0 000 1.414l3 3a1 1 0 001.414-1.414L6.414 15H12z" />
-                </svg>
-                Sell Tokens
-            </h2>
-            <p className="text-gray-400 text-sm">Sell your tokens back to the bonding curve at the current market price.</p>
+            <div className="flex items-center mb-2">
+                <IconSell className="h-5 w-5 mr-2 text-purple-400" />
+                <h2 className="text-xl font-bold text-white">Sell Tokens</h2>
+            </div>
+            <p className="text-gray-400 text-sm">Sell tokens back to the bonding curve at the current market price.</p>
 
             {!mounted ? (
                 <div className="flex justify-center py-6">
-                    <div className="animate-pulse h-10 w-40 bg-gray-800 rounded-lg"></div>
+                    <LoadingSpinner size="lg" color="purple" />
                 </div>
             ) : !publicKey ? (
                 <div className="flex flex-col items-center py-8 space-y-4">
-                    <div className="bg-indigo-900/30 backdrop-blur-md p-5 rounded-xl border border-indigo-800/40 max-w-md w-full text-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 mx-auto mb-2 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                        </svg>
-                        <p className="text-gray-300 mb-4">Connect your wallet to access your tokens</p>
-                        <WalletMultiButton />
+                    <div className="bg-gradient-to-br from-purple-900/30 to-indigo-900/30 backdrop-blur-md p-8 rounded-xl border border-purple-800/40 max-w-md w-full text-center shadow-lg">
+                        <IconLock className="h-8 w-8 mx-auto mb-4 text-purple-500" />
+                        <h3 className="text-xl font-bold text-white mb-2">Connect Wallet to Trade</h3>
+                        <p className="text-gray-300 mb-6">Connect your wallet to sell tokens at the current market price</p>
+                        <div className="wallet-button-wrapper">
+                            <WalletMultiButton />
+                        </div>
                     </div>
                 </div>
             ) : (
                 <div className="space-y-6">
-                    <div className="bg-gradient-to-r from-purple-900/30 to-indigo-900/30 p-5 rounded-xl border border-indigo-800/40 shadow-lg">
+                    <div className="bg-gradient-to-br from-purple-900/30 to-indigo-900/30 backdrop-blur-sm rounded-xl border border-purple-800/30 shadow-lg p-6">
                         <div className="flex flex-wrap items-center justify-between gap-4">
                             <div>
-                                <h3 className="text-sm font-medium text-indigo-300 mb-2">Current Market Price</h3>
-                                {currentPrice !== null ? (
-                                    <p className="text-2xl font-bold text-white">{currentPrice.toFixed(6)} <span className="text-sm font-normal text-indigo-300">SOL</span></p>
+                                <h3 className="text-sm font-medium text-purple-300 mb-2">Current Market Price</h3>
+                                {fetchingPrice ? (
+                                    <div className="animate-pulse h-8 w-44 bg-purple-900/30 rounded"></div>
+                                ) : fetchError ? (
+                                    <div className="text-red-400 text-sm flex items-center">
+                                        <IconError className="h-4 w-4 mr-1" />
+                                        Error loading price data
+                                    </div>
+                                ) : currentPrice !== null ? (
+                                    <p className="text-3xl font-bold text-gradient">{currentPrice.toFixed(6)} <span className="text-sm font-normal text-purple-300">SOL</span></p>
                                 ) : (
-                                    <div className="animate-pulse h-8 w-44 bg-indigo-900/30 rounded"></div>
+                                    <div className="text-yellow-400 text-sm flex items-center">
+                                        <IconInfo className="h-4 w-4 mr-1" />
+                                        Waiting for price data...
+                                    </div>
                                 )}
-                                <p className="text-xs text-indigo-400 mt-1">
+                                <p className="text-xs text-purple-400 mt-1">
                                     Price decreases as more tokens are sold back
                                 </p>
                             </div>
-                            <div className="px-3 py-1.5 bg-indigo-900/40 rounded-full border border-indigo-700/40">
-                                <p className="text-xs font-medium text-indigo-300">Network: <span className="text-green-400">Devnet</span></p>
+
+                            {/* Token balance indicator */}
+                            <div className="px-3 py-2 bg-purple-900/20 rounded-lg border border-purple-800/30">
+                                <div className="text-xs text-purple-300">Your Balance</div>
+                                <div className="text-lg font-semibold text-white">{tokenBalance.toLocaleString()} tokens</div>
                             </div>
                         </div>
                     </div>
 
-                    <div className="space-y-5 bg-gray-800/40 backdrop-blur-sm p-5 rounded-xl border border-gray-700/50 shadow-md">
-                        <div>
-                            <label htmlFor="amount" className="block text-sm font-medium text-gray-300 mb-2">
-                                Amount to Sell
-                            </label>
-                            <div className="relative rounded-md shadow-sm">
-                                <input
-                                    id="amount"
-                                    type="number"
-                                    value={amount}
-                                    onChange={(e) => setAmount(e.target.value)}
-                                    placeholder="Enter amount"
-                                    className="block w-full px-4 py-3 rounded-lg border border-gray-700 bg-gray-800/80 text-white placeholder-gray-500 focus:ring-purple-500 focus:border-purple-500 focus:outline-none transition-all duration-200"
-                                    disabled={loading}
-                                />
-                                <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
-                                    <span className="text-gray-400 sm:text-sm">tokens</span>
-                                </div>
-                            </div>
+                    <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm rounded-xl border border-gray-700/50 shadow-lg overflow-hidden">
+                        <div className="bg-purple-900/20 px-6 py-4 border-b border-purple-800/30">
+                            <h3 className="font-medium text-white">Sell Tokens</h3>
                         </div>
 
-                        {estimatedReturn !== null && (
-                            <div className="bg-gray-800/80 p-4 rounded-lg border border-gray-700">
-                                <div className="flex justify-between items-center">
-                                    <span className="text-sm font-medium text-gray-300">Estimated Return:</span>
-                                    <span className="text-lg font-semibold text-white">
-                                        {estimatedReturn.toFixed(6)} SOL
-                                    </span>
-                                </div>
-                                <div className="mt-2 pt-2 border-t border-gray-700/50">
-                                    <div className="flex justify-between items-center text-xs text-gray-400">
-                                        <span>Current Price:</span>
-                                        <span>{currentPrice.toFixed(6)} SOL per token</span>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
-                        {transactionStatus && (
-                            <div className={`p-4 rounded-lg text-sm ${transactionStatus.includes('Error')
-                                ? 'status-error'
-                                : transactionStatus.includes('successful')
-                                    ? 'status-success'
-                                    : 'status-info'
-                                }`}>
-                                <div className="flex items-center">
-                                    {transactionStatus.includes('Error') ? (
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                                            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                                        </svg>
-                                    ) : transactionStatus.includes('successful') ? (
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-green-400" viewBox="0 0 20 20" fill="currentColor">
-                                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                        </svg>
-                                    ) : (
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
-                                            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                                        </svg>
-                                    )}
-                                    <p>{transactionStatus}</p>
-                                </div>
-
-                                {transactionStatus.includes('Signature') && (
-                                    <div className="mt-2 pt-2 border-t border-gray-700/50 flex justify-end">
-                                        <a
-                                            href={`https://explorer.solana.com/tx/${transactionStatus.split('Signature: ')[1].split('...')[0]}?cluster=devnet`}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="text-xs font-medium bg-indigo-900/40 text-indigo-300 hover:bg-indigo-800/60 px-2.5 py-1.5 rounded-md transition-colors flex items-center"
+                        <div className="p-6 space-y-5">
+                            <div>
+                                <div className="flex justify-between items-center mb-2">
+                                    <label htmlFor="amount" className="text-sm font-medium text-purple-300">
+                                        Amount to Sell
+                                    </label>
+                                    {tokenBalance > 0 && (
+                                        <button
+                                            onClick={handleMaxClick}
+                                            className="text-xs text-purple-300 font-medium hover:text-purple-200 bg-purple-900/30 hover:bg-purple-800/40 px-2 py-1 rounded-md transition-colors"
                                         >
-                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                                            </svg>
-                                            View on Explorer
-                                        </a>
-                                    </div>
-                                )}
-                            </div>
-                        )}
-
-                        <button
-                            onClick={handleSellTokens}
-                            disabled={loading || !amount}
-                            className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-5 py-3 rounded-lg font-semibold text-sm hover:from-purple-500 hover:to-indigo-500 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg transform hover:-translate-y-0.5 active:translate-y-0"
-                        >
-                            {loading ? (
-                                <div className="flex items-center justify-center">
-                                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                    </svg>
-                                    Processing...
+                                            MAX
+                                        </button>
+                                    )}
                                 </div>
-                            ) : 'Sell Tokens'}
-                        </button>
-                    </div>
+                                <div className="relative rounded-md shadow-sm">
+                                    <input
+                                        id="amount"
+                                        type="number"
+                                        value={amount}
+                                        onChange={(e) => setAmount(e.target.value)}
+                                        placeholder="Enter amount"
+                                        className="block w-full px-4 py-3 rounded-lg border border-gray-700/80 bg-gray-800/60 text-white placeholder-gray-500 focus:ring-purple-500 focus:border-purple-500 shadow-inner transition-all duration-200"
+                                        disabled={loading}
+                                    />
+                                    <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
+                                        <span className="text-gray-400 sm:text-sm">tokens</span>
+                                    </div>
+                                </div>
+                            </div>
 
-                    <div className="text-xs text-gray-500 p-3 bg-gray-800/30 rounded-lg border border-gray-700/30">
-                        <div className="flex items-start space-x-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-indigo-400 mt-0.5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
-                                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                            </svg>
-                            <p>
-                                When you sell tokens, they are burned from circulation and you receive SOL based on the current token price. The price decreases slightly for subsequent sellers.
-                            </p>
+                            {estimatedReturn !== null && currentPrice !== null && (
+                                <div className="bg-gradient-to-br from-purple-900/10 to-indigo-900/10 p-4 rounded-lg border border-purple-800/30 shadow-inner">
+                                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+                                        <span className="text-sm font-medium text-purple-300">You Receive:</span>
+                                        <span className="text-lg font-semibold text-white">
+                                            {estimatedReturn.toFixed(6)} SOL
+                                        </span>
+                                    </div>
+                                    <div className="mt-3 pt-3 border-t border-purple-800/20">
+                                        <div className="flex justify-between items-center text-xs">
+                                            <span className="text-purple-400">Current Price:</span>
+                                            <span className="text-purple-300">{currentPrice.toFixed(6)} SOL per token</span>
+                                        </div>
+
+                                        {priceImpact !== null && (
+                                            <div className="flex justify-between items-center text-xs mt-1">
+                                                <span className="text-purple-400">Price Impact:</span>
+                                                <span className={`${Math.abs(priceImpact) > 5 ? 'text-red-400' : Math.abs(priceImpact) > 1 ? 'text-yellow-400' : 'text-green-400'}`}>
+                                                    {priceImpact.toFixed(2)}%
+                                                </span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
+                            {transactionStatus && (
+                                <div className={`p-4 rounded-lg text-sm ${transactionStatus.includes('Error')
+                                    ? 'bg-red-900/30 border border-red-700/50 text-red-300'
+                                    : transactionStatus.includes('successful')
+                                        ? 'bg-green-900/30 border border-green-700/50 text-green-300'
+                                        : 'bg-blue-900/30 border border-blue-700/50 text-blue-300'
+                                    }`}>
+                                    <div className="flex items-start">
+                                        {transactionStatus.includes('Error') ? (
+                                            <IconError className="h-5 w-5 mr-2 text-red-400 mt-0.5 flex-shrink-0" />
+                                        ) : transactionStatus.includes('successful') ? (
+                                            <IconSuccess className="h-5 w-5 mr-2 text-green-400 mt-0.5 flex-shrink-0" />
+                                        ) : (
+                                            <IconInfo className="h-5 w-5 mr-2 text-blue-400 mt-0.5 flex-shrink-0" />
+                                        )}
+                                        <p className="break-all">{transactionStatus}</p>
+                                    </div>
+                                </div>
+                            )}
+
+                            <button
+                                onClick={handleSellTokens}
+                                disabled={loading || !amount || fetchingPrice || fetchError || tokenBalance <= 0 || parseFloat(amount) > tokenBalance}
+                                className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-5 py-3 rounded-lg font-semibold text-sm shadow-lg hover:shadow-purple-700/20 disabled:opacity-50 disabled:cursor-not-allowed transition transform hover:-translate-y-0.5 active:translate-y-0"
+                            >
+                                {loading ? (
+                                    <div className="flex items-center justify-center">
+                                        <LoadingSpinner size="sm" color="white" />
+                                        <span className="ml-2">Processing...</span>
+                                    </div>
+                                ) : 'Sell Tokens'}
+                            </button>
+
+                            <div className="text-center text-xs text-gray-400 mt-3">
+                                SOL will be automatically sent to your connected wallet
+                            </div>
                         </div>
                     </div>
                 </div>

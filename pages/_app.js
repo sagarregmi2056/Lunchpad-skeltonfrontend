@@ -3,10 +3,13 @@ import { PhantomWalletAdapter, SolflareWalletAdapter } from '@solana/wallet-adap
 import { ConnectionProvider, WalletProvider } from '@solana/wallet-adapter-react';
 import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
 import { clusterApiUrl } from '@solana/web3.js';
+import { useEffect, useState } from 'react';
 import '../styles/globals.css';
 import '../styles/wallet-adapter.css';
 
 export default function MyApp({ Component, pageProps }) {
+    const [mounted, setMounted] = useState(false);
+
     // Set up network and endpoint
     const network = WalletAdapterNetwork.Devnet;
     const endpoint = clusterApiUrl(network);
@@ -17,13 +20,24 @@ export default function MyApp({ Component, pageProps }) {
         new SolflareWalletAdapter()
     ];
 
-    return (
+    // Prevent wallet auto-connection issues by ensuring client-side only rendering
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
+    // Only render wallet components on client-side
+    const renderApp = (
         <ConnectionProvider endpoint={endpoint}>
-            <WalletProvider wallets={wallets} autoConnect={false}>
+            <WalletProvider wallets={wallets} autoConnect={false} onError={(error) => {
+                console.error('Wallet error:', error);
+                // Don't show alerts to users
+            }}>
                 <WalletModalProvider>
                     <Component {...pageProps} />
                 </WalletModalProvider>
             </WalletProvider>
         </ConnectionProvider>
     );
+
+    return mounted ? renderApp : <div className="h-screen bg-gray-900"></div>;
 }
