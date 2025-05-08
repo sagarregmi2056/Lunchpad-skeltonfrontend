@@ -23,13 +23,22 @@ export default function MyTokensPage() {
           <UserTokens />
         )}
         
-        <div className="mt-8 text-center">
-          <p className="text-sm text-gray-400 mb-2">
-            Tokens you create are stored locally in your browser and linked to your wallet address.
-          </p>
-          <p className="text-sm text-gray-400">
-            Click on "View Token" to see your token on the Solana Explorer.
-          </p>
+        <div className="mt-8 bg-gray-900 rounded-xl p-6 mx-auto max-w-4xl">
+          <h2 className="text-xl font-bold mb-4 text-white">About Bonding Curve</h2>
+          <div className="text-gray-300 space-y-3">
+            <p>
+              This platform uses a shared bonding curve for all tokens. The bonding curve determines the price of tokens based on supply.
+            </p>
+            <p>
+              <span className="font-medium text-blue-400">How it works:</span> The price follows the formula <code className="bg-gray-800 px-2 py-1 rounded">Price = InitialPrice + (TotalSupply * Slope)</code>
+            </p>
+            <p>
+              When you create a token, you're actually creating a new SPL token that uses the platform's shared bonding curve mechanism for pricing.
+            </p>
+            <p>
+              You can view your created tokens on the Solana Explorer to see details about ownership, supply, and other on-chain information.
+            </p>
+          </div>
         </div>
       </div>
     </Layout>

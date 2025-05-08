@@ -39,6 +39,8 @@ export const saveCreatedToken = (walletAddress, tokenData) => {
     // Check if token already exists
     const exists = existingTokens[walletAddress].some(t => t.mint === tokenData.mint);
     if (!exists) {
+      // Important note: In this design, there's only one bonding curve PDA for all tokens
+      // So the bondingCurve value will be the same for all tokens
       existingTokens[walletAddress].push({
         ...tokenData,
         explorerUrl: getExplorerUrl(tokenData.mint),
@@ -199,6 +201,65 @@ export const getOrCreateAssociatedTokenAccount = async (owner, mint) => {
   }
 };
 
+// Add a function to check multiple PDA derivations
+export const checkPdaDerivation = async (tokenMint) => {
+  try {
+    const connection = new Connection('https://api.devnet.solana.com', 'confirmed');
+    const provider = new AnchorProvider(
+      connection,
+      {publicKey: new PublicKey(tokenMint)},
+      AnchorProvider.defaultOptions()
+    );
+    
+    const program = new Program(idl, PROGRAM_ID, provider);
+    
+    // Try multiple seed combinations
+    const mintPubkey = new PublicKey(tokenMint);
+    
+    // 1. Just bonding_curve
+    const [pda1] = await PublicKey.findProgramAddress(
+      [BONDING_CURVE_SEED],
+      program.programId
+    );
+    
+    // 2. bonding_curve + mint address
+    const [pda2] = await PublicKey.findProgramAddress(
+      [BONDING_CURVE_SEED, mintPubkey.toBuffer()],
+      program.programId
+    );
+    
+    // 3. bonding_curve + "token_name"
+    const [pda3] = await PublicKey.findProgramAddress(
+      [BONDING_CURVE_SEED, Buffer.from("token_name")],
+      program.programId
+    );
+    
+    // 4. Just the mint key
+    const [pda4] = await PublicKey.findProgramAddress(
+      [mintPubkey.toBuffer()],
+      program.programId
+    );
+    
+    // 5. Try with a different string encoding 
+    const [pda5] = await PublicKey.findProgramAddress(
+      [Buffer.from("bonding_curve", "utf8")],
+      program.programId
+    );
+    
+    return {
+      pda1: pda1.toString(),
+      pda2: pda2.toString(),
+      pda3: pda3.toString(),
+      pda4: pda4.toString(),
+      pda5: pda5.toString(),
+      expected: "GX2VanNcKEpFhjpSVbrbEyXuPHPkt44LbQdHfey2Lue9"
+    };
+  } catch (error) {
+    console.error("Error checking PDA derivation:", error);
+    return { error: error.message };
+  }
+};
+
 // Initialize the bonding curve (admin only)
 export const initializeBondingCurve = async (wallet, initialPrice, slope, customTokenMint = null) => {
   try {
@@ -218,14 +279,13 @@ export const initializeBondingCurve = async (wallet, initialPrice, slope, custom
     const tokenMintToUse = customTokenMint || TOKEN_MINT;
     console.log('Using token mint:', tokenMintToUse.toString());
     
-    // Fix the PDA derivation to match what the program expects
-    // Just use BONDING_CURVE_SEED without the token mint
+    // Use only "bonding_curve" as seed to match the contract's PDA derivation
     const [bondingCurvePDA] = await PublicKey.findProgramAddress(
-      [BONDING_CURVE_SEED],
+      [Buffer.from('bonding_curve')],
       program.programId
     );
     
-    console.log('Bonding curve PDA for this token:', bondingCurvePDA.toString());
+    console.log('Bonding curve PDA:', bondingCurvePDA.toString());
 
     // Check if the account already exists
     try {
@@ -346,5 +406,47 @@ export const disconnectWallet = async () => {
   } catch (error) {
     console.error('Error disconnecting wallet:', error);
     return false;
+  }
+};
+
+// Check if bonding curve is initialized
+export const checkBondingCurveInitialized = async () => {
+  try {
+    const connection = new Connection('https://api.devnet.solana.com', 'confirmed');
+    
+    // Create a dummy provider for reading data
+    const dummyProvider = {
+      connection,
+      publicKey: SystemProgram.programId, // Just a placeholder
+    };
+    
+    const program = new Program(idl, PROGRAM_ID, dummyProvider);
+    
+    // Get the bonding curve PDA
+    const [bondingCurvePDA] = await PublicKey.findProgramAddress(
+      [Buffer.from('bonding_curve')],
+      program.programId
+    );
+    
+    // Check if the account exists
+    const accountInfo = await connection.getAccountInfo(bondingCurvePDA);
+    
+    if (!accountInfo) {
+      return {
+        initialized: false,
+        address: bondingCurvePDA.toString(),
+        explorerUrl: getExplorerUrl(bondingCurvePDA.toString())
+      };
+    }
+    
+    // Account exists, return info
+    return {
+      initialized: true,
+      address: bondingCurvePDA.toString(),
+      explorerUrl: getExplorerUrl(bondingCurvePDA.toString())
+    };
+  } catch (error) {
+    console.error('Error checking bonding curve:', error);
+    return { initialized: false, error: error.message };
   }
 }; 
