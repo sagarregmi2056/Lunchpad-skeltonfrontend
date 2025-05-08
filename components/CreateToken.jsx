@@ -74,8 +74,11 @@ const CreateToken = () => {
                 setStatus('Token created. Initializing bonding curve...');
 
                 // Convert price and slope to lamports
-                const priceInLamports = parseFloat(initialPrice) * LAMPORTS_PER_SOL;
-                const slopeInLamports = parseFloat(slope) * LAMPORTS_PER_SOL;
+                const priceInLamports = Math.floor(parseFloat(initialPrice) * LAMPORTS_PER_SOL);
+                const slopeInLamports = Math.floor(parseFloat(slope) * LAMPORTS_PER_SOL);
+
+                console.log('Price in Lamports:', priceInLamports);
+                console.log('Slope in Lamports:', slopeInLamports);
 
                 // Initialize the bonding curve
                 const tx = await initializeBondingCurve(

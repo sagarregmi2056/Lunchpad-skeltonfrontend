@@ -1,4 +1,4 @@
-import { AnchorProvider, Program } from '@project-serum/anchor';
+import { AnchorProvider, Program, BN } from '@project-serum/anchor';
 import { Connection, PublicKey, SystemProgram, LAMPORTS_PER_SOL, Transaction } from '@solana/web3.js';
 import { TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID, getAssociatedTokenAddress, createAssociatedTokenAccountInstruction } from '@solana/spl-token';
 import { useEffect, useState } from 'react';
@@ -169,8 +169,16 @@ export const initializeBondingCurve = async (wallet, initialPrice, slope) => {
       ? wallet.publicKey 
       : new PublicKey(wallet.publicKey);
 
+    // Convert initialPrice and slope to BN objects
+    // Make sure these are proper BigNumber objects
+    const initialPriceBN = new BN(initialPrice.toString());
+    const slopeBN = new BN(slope.toString());
+
+    console.log('InitialPrice:', initialPrice, 'as BN:', initialPriceBN.toString());
+    console.log('Slope:', slope, 'as BN:', slopeBN.toString());
+
     const tx = await program.methods
-      .initialize(initialPrice, slope)
+      .initialize(initialPriceBN, slopeBN)
       .accounts({
         bondingCurve: bondingCurvePDA,
         authority: walletPubkey,
