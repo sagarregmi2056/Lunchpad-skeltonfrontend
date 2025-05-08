@@ -193,7 +193,7 @@ const BuyTokens = () => {
                         <h3 className="text-xl font-bold text-white mb-2">Connect Wallet to Trade</h3>
                         <p className="text-gray-300 mb-6">Connect your wallet to buy tokens at the current market price</p>
                         <div className="wallet-button-wrapper">
-                            <WalletMultiButton />
+                            <WalletMultiButton className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white px-6 py-3 rounded-lg font-semibold text-sm shadow-lg hover:shadow-purple-700/20 transition transform hover:-translate-y-0.5 active:translate-y-0" />
                         </div>
                     </div>
                 </div>
