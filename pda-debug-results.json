@@ -1,0 +1,793 @@
+[
+  {
+    "name": "bonding_curve (lowercase, utf8)",
+    "pda": "DxoVvbJv4mm1bQ73Wf1UZ1UK7yE9coG9BRv6ZYx7DEdc",
+    "bump": 254,
+    "matchesExpected": false,
+    "matchesActual": true
+  },
+  {
+    "name": "bonding_curve (lowercase, ascii)",
+    "pda": "DxoVvbJv4mm1bQ73Wf1UZ1UK7yE9coG9BRv6ZYx7DEdc",
+    "bump": 254,
+    "matchesExpected": false,
+    "matchesActual": true
+  },
+  {
+    "name": "bonding_curve (lowercase, binary)",
+    "pda": "DxoVvbJv4mm1bQ73Wf1UZ1UK7yE9coG9BRv6ZYx7DEdc",
+    "bump": 254,
+    "matchesExpected": false,
+    "matchesActual": true
+  },
+  {
+    "name": "BONDING_CURVE (uppercase)",
+    "pda": "4nKRA7xMopQbYrUhVyRVsdFuoeY7R1wVJUifkZuQytkT",
+    "bump": 255,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Bonding_Curve (mixed case)",
+    "pda": "72DsJjTd9TgqUqMvvHTcncbno3BUBHuBC4i7CdqKWXce",
+    "bump": 252,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "bondingcurve (no underscore)",
+    "pda": "ACHWdMabTCTBKRCQzctc8bN1dieonKPMDvSwDddYNvKb",
+    "bump": 254,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "bonding curve (with space)",
+    "pda": "Hth2fWSpAAcbGWJkwpfktr5u52YbMZmgRMzDDDh8QXTA",
+    "bump": 255,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "bonding-curve (with hyphen)",
+    "pda": "BdwJuUDKRixWnoM7s7pDmPsbfraS96Ca2x4Y8inef1oN",
+    "bump": 254,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "bonding.curve (with dot)",
+    "pda": "2wkSZfdx8yHTF4CA9ic477EnLZ81bmSGLTUcNMxELmaf",
+    "bump": 255,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "empty string",
+    "pda": "2qHBzyagQMoAuMzheYsASzqxPWBKriCKmWEDHhVPXpes",
+    "bump": 255,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "number 0",
+    "pda": "E5n4nqQuLnonZNFkmLu2ZFK37H9gLV6Uqunw46TeTzHK",
+    "bump": 255,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "number 1",
+    "pda": "AfbXhGbDt4nHDxtMUpJaaykte91y6zSxBNCbsKhVpAHw",
+    "bump": 254,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "bytes [0, 1, 2]",
+    "pda": "DbrnCys5S52eW2utpTpn6LPw1dFURyycfuFmpLuEUSNy",
+    "bump": 255,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Mixed case variant 1: BoNdInG_CuRvE",
+    "pda": "USLtbX8HAR4zpGDdNjirAVtzWFPbc64LcpBKhJLJdh5",
+    "bump": 253,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Mixed case variant 2: bOnDiNg_cUrVe",
+    "pda": "F1yiccfWqLaJsfkqM9Njc2ECA4amWgxzGSuBTxLBdDir",
+    "bump": 253,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Mixed case variant 3: bonding_curve",
+    "pda": "DxoVvbJv4mm1bQ73Wf1UZ1UK7yE9coG9BRv6ZYx7DEdc",
+    "bump": 254,
+    "matchesExpected": false,
+    "matchesActual": true
+  },
+  {
+    "name": "Mixed case variant 4: bonding_curve",
+    "pda": "DxoVvbJv4mm1bQ73Wf1UZ1UK7yE9coG9BRv6ZYx7DEdc",
+    "bump": 254,
+    "matchesExpected": false,
+    "matchesActual": true
+  },
+  {
+    "name": "Mixed case variant 5: bonding_curve",
+    "pda": "DxoVvbJv4mm1bQ73Wf1UZ1UK7yE9coG9BRv6ZYx7DEdc",
+    "bump": 254,
+    "matchesExpected": false,
+    "matchesActual": true
+  },
+  {
+    "name": "Single char: ' ' (ASCII 32)",
+    "pda": "ECrE95aHJpBgcbN4G1dn7sXuuPFgvjkJGdLo6h6Y7qv3",
+    "bump": 255,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: '!' (ASCII 33)",
+    "pda": "GNgDjCDcT5r87zPyw1AMR1Syv8LAtU5fdEbMWVS8r3a7",
+    "bump": 254,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: '\"' (ASCII 34)",
+    "pda": "AuoqUE2TQr6EfwPHyX7NnZQuEuFhCm2Fk4ofyT7EDfPq",
+    "bump": 255,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: '#' (ASCII 35)",
+    "pda": "F9SV2zjYy38ByY9ySvhAR2ke7zKC3Vv4RMXJ8xm8hChM",
+    "bump": 254,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: '$' (ASCII 36)",
+    "pda": "BxJ9muTZWmK8db1XfNSFaiheVLzKoyJPzUi8BEwctj7s",
+    "bump": 254,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: '%' (ASCII 37)",
+    "pda": "FW6SAyB1a1gwnUtoGrtepHFXLALXcUyGagCQcV8nACmK",
+    "bump": 255,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: '&' (ASCII 38)",
+    "pda": "D4rd1neUkVTtsfKUUBk25AawaZXSnB6CGzryKVANNLQo",
+    "bump": 255,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: ''' (ASCII 39)",
+    "pda": "3pG3R9akByU1Y9nk3hndEspGPW943Y3FyHrThfcBLrsF",
+    "bump": 255,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: '(' (ASCII 40)",
+    "pda": "3ybdkMdx8GMWV2EKKuzmzrVTsMS6ttTFhoJcELVzaU4Y",
+    "bump": 254,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: ')' (ASCII 41)",
+    "pda": "HmahSPDiufjPiGvmRkWBtVsHNPD3TKbLVMqjvS2ccxd",
+    "bump": 254,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: '*' (ASCII 42)",
+    "pda": "24JXgo7tRHXzbh75XRP71YESiSyyNV4z31sK32pncPyu",
+    "bump": 254,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: '+' (ASCII 43)",
+    "pda": "8Tu9iiGAd9bTtzVHLL6u15BCgEyzkYLh6Qfr16iJxavT",
+    "bump": 255,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: ',' (ASCII 44)",
+    "pda": "GqQp2nsrPgH54apaZLQXwKAB2HNcodo9HHuZBVdZxprp",
+    "bump": 253,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: '-' (ASCII 45)",
+    "pda": "7wAWoskwAo3NNpQ3L9J3yjr81nPGDJUoyfD3VqRm8xLL",
+    "bump": 255,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: '.' (ASCII 46)",
+    "pda": "HNPYwmxaz7A78QtaV4nxtqpwHugFwJzbKhkmm4fHgLsa",
+    "bump": 254,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: '/' (ASCII 47)",
+    "pda": "6dVmDmHzJ2Cd12GmWB3tS7m3vB4rvPtThKezK6Kntasb",
+    "bump": 255,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: '0' (ASCII 48)",
+    "pda": "HZNWwreYUKGzi61UKsCyMdq5LVjuDzmWjL8gA5BkpV92",
+    "bump": 255,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: '1' (ASCII 49)",
+    "pda": "5jg44Mhie2fLGFBbVUePagz5qKcBJM9vpMGCdGnKCSnJ",
+    "bump": 251,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: '2' (ASCII 50)",
+    "pda": "4ZAkBSD9QPAGo4eTKbkk4JBMHpuZDiaSKeeKXgw5rSgf",
+    "bump": 255,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: '3' (ASCII 51)",
+    "pda": "G1yN2fbV4BpZUQjRX6XQX6u1CXXkfeg3Dw1dSbWSiir6",
+    "bump": 254,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: '4' (ASCII 52)",
+    "pda": "8n9kt4yqmFf6vkJKkXnBsBLTqbxvehcCgqsn7uuUEMXR",
+    "bump": 255,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: '5' (ASCII 53)",
+    "pda": "7Ph1amLfcwsTProoSsTcSWuPAXPZ5s9LvBuj12HpjefT",
+    "bump": 255,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: '6' (ASCII 54)",
+    "pda": "Djwjmot49YKMjGxuVA3Agv2w7EbohvNWhTFtwMAEpU1E",
+    "bump": 253,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: '7' (ASCII 55)",
+    "pda": "95Rcmbnj2NNrMzuQHQRbyCMy5BPD4mUAzumJtjcSDoRU",
+    "bump": 255,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: '8' (ASCII 56)",
+    "pda": "B5iukRu4GuCfD9zDkYLcfjLL8NRpP27fXerfr9e7Ub6b",
+    "bump": 255,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: '9' (ASCII 57)",
+    "pda": "HASZ5gKtste5spc1wLwUkAF6MPYHSbrUTYPvHirWXRuf",
+    "bump": 254,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: ':' (ASCII 58)",
+    "pda": "4SE27USHeTyBUbg4Y69rUv5SUR3v2pKknEaRB1bpVUBc",
+    "bump": 255,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: ';' (ASCII 59)",
+    "pda": "75LrYcP5aGjU8VLQoBmZVAPtxiffX1N4vfMk4aYuzRyR",
+    "bump": 252,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: '<' (ASCII 60)",
+    "pda": "vypjGo5YDYaVRa8RtMGxKrQvgtbE1tgpURntN5z1Aey",
+    "bump": 250,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: '=' (ASCII 61)",
+    "pda": "GrY2bmYnbHG61KZhyLc1rnwZPYHcSHShXefXxpiZVfnD",
+    "bump": 255,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: '>' (ASCII 62)",
+    "pda": "HFcbo84afdT3pPj3GrWkCYaNL5hJEs8ebLRRTfQjKndk",
+    "bump": 255,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: '?' (ASCII 63)",
+    "pda": "Hqwpq9nZ2CgYjBWUNSakieg12DAsgXiWhiyiZtxKAc31",
+    "bump": 254,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: '@' (ASCII 64)",
+    "pda": "5LBDYRGPPb8HjvWYbTpzGJi8WuqqJxftwByZEff861YW",
+    "bump": 255,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: 'A' (ASCII 65)",
+    "pda": "HNBrVf54bqJ5rbugMtPvhYdhjgZCG9J9kk92tFTrpbZ7",
+    "bump": 255,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: 'B' (ASCII 66)",
+    "pda": "BV95eGX1eFYyhFDXskScsaNdMj42Duyi1gAzyh5NJnwj",
+    "bump": 255,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: 'C' (ASCII 67)",
+    "pda": "DqJfHTXHYEb5NaGC7LrhfXkUMmYsBHCBtgt3manwYRhK",
+    "bump": 255,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: 'D' (ASCII 68)",
+    "pda": "7777javki4w6tNRzhY5iGuhvXTNskHZwaB4pzPGvGYaT",
+    "bump": 252,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: 'E' (ASCII 69)",
+    "pda": "9yMMfHnrWVhPSPTTeqdpR6CRq1dw1zmAwB2jg7D1L41C",
+    "bump": 255,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: 'F' (ASCII 70)",
+    "pda": "3qCgHSQeYWCRNN7HdE67gmPn45QjeRGjN5D4HhKPv3uA",
+    "bump": 255,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: 'G' (ASCII 71)",
+    "pda": "79ewtakn14vRv6hGjXZYbHpdPZa5VZdL3KN1ejgAousX",
+    "bump": 255,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: 'H' (ASCII 72)",
+    "pda": "2pzz2efncGKwumir53mqxRsubjSSCQTEam8mgERUPpzz",
+    "bump": 254,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: 'I' (ASCII 73)",
+    "pda": "5jPDrpoAgXUVYBJk9Rj2kz7XAswtGy26RW74E7oNL3eM",
+    "bump": 251,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: 'J' (ASCII 74)",
+    "pda": "8yU5NZDcTNJ21BDtjJZV1KXa9NbYfyXkjZuv5piRK65D",
+    "bump": 255,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: 'K' (ASCII 75)",
+    "pda": "ErzBsv6NPuYGyD44NdTw4F9HqxNbJfUGuhiAyZnnMVNg",
+    "bump": 255,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: 'L' (ASCII 76)",
+    "pda": "AqbVKdTASYEBfzdj9RiaeJZHfyDfoc4Po8Y1ZqWgrHuK",
+    "bump": 254,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: 'M' (ASCII 77)",
+    "pda": "2A3zrKV5KEc5YLEGBihvW1MGM4KdxGsZgP3c1E2Dad2H",
+    "bump": 253,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: 'N' (ASCII 78)",
+    "pda": "H2WfvrccGoGnaBdxMC38punquq5ShbRs2N3cL3ruMMVe",
+    "bump": 252,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: 'O' (ASCII 79)",
+    "pda": "CK3ev31qt72tVuVUfRXne3bwd2y1wxvAfz6uXPGa1Lux",
+    "bump": 255,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: 'P' (ASCII 80)",
+    "pda": "9D9NjTyWCaWRbG2ssXQE9f5id9sXEZwoVxsfj92Nx1BE",
+    "bump": 255,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: 'Q' (ASCII 81)",
+    "pda": "2buhzFD8TSLuhny945sKSXFNKVmPZZMsnG8V4aXc2ngL",
+    "bump": 253,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: 'R' (ASCII 82)",
+    "pda": "DhcLTT2mbkiYUwzLZYv5Nmx6CdF16DR4vgpiULHfi8A6",
+    "bump": 255,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: 'S' (ASCII 83)",
+    "pda": "8WZhLrqm8xSV3f3FAnLv29h8LM96NU4SczAdLqjPEZhF",
+    "bump": 255,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: 'T' (ASCII 84)",
+    "pda": "6nhERwJuizH2kREBGiLveQTD5MpyFaVMRGRycx4SRQkT",
+    "bump": 255,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: 'U' (ASCII 85)",
+    "pda": "GETEZ3N94DDnfSGcMFoMfyAKYdaRBZEvKC2qr6tEsan7",
+    "bump": 254,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: 'V' (ASCII 86)",
+    "pda": "93BTAiyEeqCwgU1j5cXpwhjA1WwwuXJS6TbvdYarAVAJ",
+    "bump": 254,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: 'W' (ASCII 87)",
+    "pda": "3CPpHhNMqiQZdSYvSckLeWEYhsWH8bPuexW8iWJVt4HF",
+    "bump": 255,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: 'X' (ASCII 88)",
+    "pda": "6TbJXAMoYrht2ptyTo4C1LFLHNZsoh369GPYYMxF6KSz",
+    "bump": 253,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: 'Y' (ASCII 89)",
+    "pda": "AgYyjsGCJGz2zfBYSEw5bNeZVYkaDu3D3xMJUyrS9AuM",
+    "bump": 255,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: 'Z' (ASCII 90)",
+    "pda": "2bNLqURBTgabac5L1Pyc7zSimGSLgTPdBs7TLjztLdbJ",
+    "bump": 252,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: '[' (ASCII 91)",
+    "pda": "2JtKSeCPBsKAQbq9bc4DuyQ5jAuaNTCZhqLUxtpULC7t",
+    "bump": 254,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: '\\' (ASCII 92)",
+    "pda": "J7XrebbCKYkLkJxCQYptypL4Jpf5aN1RbEPqvbcMxpvd",
+    "bump": 255,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: ']' (ASCII 93)",
+    "pda": "D9cfY7YD3KnjsZV7E8C5D1f64821MFCRsRbXqr6ezoRr",
+    "bump": 252,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: '^' (ASCII 94)",
+    "pda": "GhusNHFny6qBZCCodx2jdvty2N1HZx2hgeppYkG8WyQ8",
+    "bump": 250,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: '_' (ASCII 95)",
+    "pda": "GnjiEXt7T8FQ3XYV5tqWatygctJjQ6S4F9v6jsUyGR3h",
+    "bump": 253,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: '`' (ASCII 96)",
+    "pda": "6vN6b9py4emf1oBp7FVQwrRuVSPwnY3Rpar538yKQrWL",
+    "bump": 251,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: 'a' (ASCII 97)",
+    "pda": "3AvxPjxK2fdePXkWDBZjgGsSiVgJf5oDSCz9HcAdjJ6k",
+    "bump": 254,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: 'b' (ASCII 98)",
+    "pda": "GGugdwkRiadWaQVZNvTx7tAS4kXu2sA5N48FzvLCMzB1",
+    "bump": 255,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: 'c' (ASCII 99)",
+    "pda": "2PGURVWSGkebruxFRuk6Sur72b1mxqEtCn1dBMQ7WmrW",
+    "bump": 254,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: 'd' (ASCII 100)",
+    "pda": "9BW97zaZjh6XuRHV7grxhHMzCgAabAC6coRKZQHrHnz9",
+    "bump": 254,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: 'e' (ASCII 101)",
+    "pda": "8cGZvqQTsnvBNRC3CXsJqvBXLmR4i7M8TdMvKQkwqFn6",
+    "bump": 254,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: 'f' (ASCII 102)",
+    "pda": "3ovSohyh74boaxh9pj5mzYHcAbvLrrdxJ6f8fi3usSw1",
+    "bump": 255,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: 'g' (ASCII 103)",
+    "pda": "HhiBQPCEinzs2To6UbE495puue4GK4zFMhLtFxvDsmTg",
+    "bump": 254,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: 'h' (ASCII 104)",
+    "pda": "67PL2BQ8gofSUJhxKonGbFhXeAxsMRVbU9yvC7dmSL6m",
+    "bump": 254,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: 'i' (ASCII 105)",
+    "pda": "HjmDbSNawTx6233WsH6mXnSmAKFwzE8DGj5eeujucQfN",
+    "bump": 254,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: 'j' (ASCII 106)",
+    "pda": "692YwMATZi6JiK9SaMDDE9EatJURGBCzwP72YrvF4Pbv",
+    "bump": 255,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: 'k' (ASCII 107)",
+    "pda": "9HNfaB1cJy8LbSbAX7xj2j9haxQKJkQ4fxFdizCwaF3",
+    "bump": 250,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: 'l' (ASCII 108)",
+    "pda": "5a55knuVjzTQKX9doJjFznErRbA4An7AfarpXhUu3TE1",
+    "bump": 255,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: 'm' (ASCII 109)",
+    "pda": "CdV5tCU2RNQWdR2tBxmwRzEkbV6pZTNVWATwrrUpiqj8",
+    "bump": 253,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: 'n' (ASCII 110)",
+    "pda": "8XLXR7Sg4bj5bi39cc5WgRKANA8AkvKzbMwKtE9fynCG",
+    "bump": 252,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: 'o' (ASCII 111)",
+    "pda": "HgyS5MSQRY9KRTdBSWKURB33322RqArwkc1xRgERNp52",
+    "bump": 255,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: 'p' (ASCII 112)",
+    "pda": "GPLZ7WvoCJK9awDcKjTStyt6VKG6U3T1c6aoM3eJP6kj",
+    "bump": 254,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: 'q' (ASCII 113)",
+    "pda": "Cd2FxA4ebYdj8BdHKaBiriCCoHo4CQXnHXvGXdhAVyKh",
+    "bump": 255,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: 'r' (ASCII 114)",
+    "pda": "A4ufzfKZ8iCTv6FtNf9mpVJtV9rGy2RMSGSUBEMnRkDw",
+    "bump": 255,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: 's' (ASCII 115)",
+    "pda": "J9hAJuXHZkViUx2qVMeV58nQucFzxLJhcrbthBkRc9go",
+    "bump": 255,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: 't' (ASCII 116)",
+    "pda": "88xb8XQ4t3vkh4ie8B7GdjcbcNuhFoT8FA8Z939QpNNM",
+    "bump": 255,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: 'u' (ASCII 117)",
+    "pda": "6UwtTeNqPA9jzbjZCdF3ep2fdzscMKX4s5rnXGUdVTjJ",
+    "bump": 254,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: 'v' (ASCII 118)",
+    "pda": "DTtmKE8TjwYAPgrJ3Uma6MdhxdoT1jnLnNePhGZcQDxm",
+    "bump": 253,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: 'w' (ASCII 119)",
+    "pda": "3Dywnx8VRn1NxVt5JePPQGourf8R7FDuwTF7WDZfFRga",
+    "bump": 254,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: 'x' (ASCII 120)",
+    "pda": "2TT8RzAu25ZYMaEZhN5NoMXJPR3hTe8poyfC5HURsz3R",
+    "bump": 254,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: 'y' (ASCII 121)",
+    "pda": "95NvoPFT2UnXV3qyYztZNB9fyegXbBEUPuVQt1rmV2bg",
+    "bump": 255,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: 'z' (ASCII 122)",
+    "pda": "6R58XEMdUYHkzMNwVS67RVy3UiPUcBCsF6zycaXwZ6Ys",
+    "bump": 255,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: '{' (ASCII 123)",
+    "pda": "4EU1WCykyBqNZ2vjwP5JL5ktaKPgzAEcCBr9CA943Wdu",
+    "bump": 253,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: '|' (ASCII 124)",
+    "pda": "3Z7wtTVAYHnz6QRsGz6k4Sk9WVkck2TvbDBmwm61BLAZ",
+    "bump": 255,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: '}' (ASCII 125)",
+    "pda": "68m3Hnmqf2USBuciKD7BauHQ6a8S59RBnfqWCsyVp9yh",
+    "bump": 254,
+    "matchesExpected": false,
+    "matchesActual": false
+  },
+  {
+    "name": "Single char: '~' (ASCII 126)",
+    "pda": "6d4jnLTBveK82qohADRV27p55skBfc8B1XpL7YHZpCk2",
+    "bump": 255,
+    "matchesExpected": false,
+    "matchesActual": false
+  }
+]
