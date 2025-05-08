@@ -14,6 +14,55 @@ export const TOKEN_MINT = new PublicKey('EPD1phHBAgZNzJ85cGn3g2fV1YG22A9oWnYA2p9
 // Bonding curve seed
 const BONDING_CURVE_SEED = Buffer.from('bonding_curve');
 
+// Local storage key for user tokens
+const USER_TOKENS_KEY = 'userCreatedTokens';
+
+// Function to save created token
+export const saveCreatedToken = (walletAddress, tokenData) => {
+  if (typeof window === 'undefined') return;
+  
+  try {
+    // Get existing tokens
+    const existingTokensStr = localStorage.getItem(USER_TOKENS_KEY) || '{}';
+    const existingTokens = JSON.parse(existingTokensStr);
+    
+    // Add the token to the wallet's tokens
+    if (!existingTokens[walletAddress]) {
+      existingTokens[walletAddress] = [];
+    }
+    
+    // Check if token already exists
+    const exists = existingTokens[walletAddress].some(t => t.mint === tokenData.mint);
+    if (!exists) {
+      existingTokens[walletAddress].push({
+        ...tokenData,
+        createdAt: new Date().toISOString()
+      });
+    }
+    
+    // Save back to localStorage
+    localStorage.setItem(USER_TOKENS_KEY, JSON.stringify(existingTokens));
+    return true;
+  } catch (error) {
+    console.error('Error saving token to local storage:', error);
+    return false;
+  }
+};
+
+// Function to get user's created tokens
+export const getUserCreatedTokens = (walletAddress) => {
+  if (typeof window === 'undefined') return [];
+  
+  try {
+    const tokensStr = localStorage.getItem(USER_TOKENS_KEY) || '{}';
+    const tokens = JSON.parse(tokensStr);
+    return tokens[walletAddress] || [];
+  } catch (error) {
+    console.error('Error getting tokens from local storage:', error);
+    return [];
+  }
+};
+
 // Initialize connection
 const connection = new Connection('https://api.devnet.solana.com', 'confirmed');
 
