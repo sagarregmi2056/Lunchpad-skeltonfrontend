@@ -1,4 +1,4 @@
-import { createMetadataAccountV3 } from '@metaplex-foundation/mpl-token-metadata';
+import { createMetadataAccountV3, findMetadataPda } from '@metaplex-foundation/mpl-token-metadata';
 import { createUmi } from '@metaplex-foundation/umi-bundle-defaults';
 import { none, publicKey as publicKeyUmi, struct, string } from '@metaplex-foundation/umi';
 import { fromWeb3JsPublicKey, toWeb3JsInstruction, fromWeb3JsTransaction } from '@metaplex-foundation/umi-web3js-adapters';
@@ -54,23 +54,14 @@ export const createTokenMetadata = async (
         const mintPublicKey = mint instanceof PublicKey ? mint : new PublicKey(mint);
         const mintUmi = fromWeb3JsPublicKey(mintPublicKey);
         console.log('Mint Umi:', mintUmi);
-
-        // Create metadata arguments with all required fields
-        const metadataArgs = {
-            mint: mintUmi,
-            authority: walletUmi,
-            name,
-            symbol,
-            uri: uri || '',
-            sellerFeeBasisPoints: 0,
-            creators: none(),
-            collection: none(),
-            uses: none(),
-        };
+        
+        // Get the correct metadata PDA using the Metaplex helper
+        const metadataPda = findMetadataPda(umi, { mint: mintUmi });
+        console.log('Metadata PDA:', metadataPda);
 
         // Create the metadata instruction with proper context
         const builder = createMetadataAccountV3(umi, {
-            metadata: umi.payer.publicKey,
+            metadata: metadataPda,
             mint: mintUmi,
             mintAuthority: walletUmi,
             payer: walletUmi,
