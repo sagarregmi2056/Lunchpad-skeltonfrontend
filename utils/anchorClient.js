@@ -144,7 +144,7 @@ export const getOrCreateAssociatedTokenAccount = async (owner, mint) => {
 };
 
 // Initialize the bonding curve (admin only)
-export const initializeBondingCurve = async (wallet, initialPrice, slope) => {
+export const initializeBondingCurve = async (wallet, initialPrice, slope, customTokenMint = null) => {
   try {
     if (!wallet || !wallet.publicKey) throw new Error('Wallet not connected');
 
@@ -158,11 +158,18 @@ export const initializeBondingCurve = async (wallet, initialPrice, slope) => {
     const program = new Program(idl, PROGRAM_ID, provider);
     console.log('Program:', program);
     
-    // Find the PDA for the bonding curve
+    // Use the custom token mint if provided, otherwise use the default
+    const tokenMintToUse = customTokenMint || TOKEN_MINT;
+    console.log('Using token mint:', tokenMintToUse.toString());
+    
+    // Find the PDA for the bonding curve - we need a unique one for each token
+    const tokenMintBuffer = tokenMintToUse.toBuffer();
     const [bondingCurvePDA] = await PublicKey.findProgramAddress(
-      [BONDING_CURVE_SEED],
+      [BONDING_CURVE_SEED, tokenMintBuffer],
       program.programId
     );
+    
+    console.log('Bonding curve PDA for this token:', bondingCurvePDA.toString());
 
     // Check if the account already exists
     try {
@@ -198,7 +205,7 @@ export const initializeBondingCurve = async (wallet, initialPrice, slope) => {
       .accounts({
         bondingCurve: bondingCurvePDA,
         authority: walletPubkey,
-        tokenMint: TOKEN_MINT,
+        tokenMint: tokenMintToUse,
         systemProgram: SystemProgram.programId
       })
       .rpc();

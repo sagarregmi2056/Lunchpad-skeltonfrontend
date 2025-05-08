@@ -73,6 +73,9 @@ const CreateToken = () => {
             if (result.success) {
                 setStatus('Token created. Initializing bonding curve...');
 
+                // Store the mint address for later use
+                const mintAddress = result.mint;
+
                 // Convert price and slope to lamports
                 const priceInLamports = Math.floor(parseFloat(initialPrice) * LAMPORTS_PER_SOL);
                 const slopeInLamports = Math.floor(parseFloat(slope) * LAMPORTS_PER_SOL);
@@ -80,25 +83,30 @@ const CreateToken = () => {
                 console.log('Price in Lamports:', priceInLamports);
                 console.log('Slope in Lamports:', slopeInLamports);
 
-                // Initialize the bonding curve
-                const result = await initializeBondingCurve(
-                    wallet,
-                    priceInLamports,
-                    slopeInLamports
-                );
+                try {
+                    // Initialize the bonding curve with the new TOKEN_MINT
+                    const curveResult = await initializeBondingCurve(
+                        wallet,
+                        priceInLamports,
+                        slopeInLamports,
+                        new PublicKey(mintAddress) // Pass the new token mint address
+                    );
 
-                if (result.success) {
-                    const statusMessage = result.message
-                        ? `Token created successfully!\nMint address: ${result.mint}\nBonding curve: ${result.message}`
-                        : `Token created and initialized successfully!\nMint address: ${result.mint}\nTransaction: ${result.signature}`;
+                    if (curveResult.success) {
+                        const statusMessage = curveResult.message
+                            ? `Token created successfully!\nMint address: ${mintAddress}\nBonding curve: ${curveResult.message}`
+                            : `Token created and initialized successfully!\nMint address: ${mintAddress}\nTransaction: ${curveResult.signature}`;
 
-                    setStatus(statusMessage);
-                    setTokenName('');
-                    setTokenSymbol('');
-                    setInitialPrice('1');
-                    setSlope('0.1');
-                } else {
-                    throw new Error(result.error || "Failed to initialize bonding curve");
+                        setStatus(statusMessage);
+                        setTokenName('');
+                        setTokenSymbol('');
+                        setInitialPrice('1');
+                        setSlope('0.1');
+                    } else {
+                        throw new Error(curveResult.error || "Failed to initialize bonding curve");
+                    }
+                } catch (error) {
+                    setStatus(`Token created with address ${mintAddress}, but bonding curve failed: ${error.message}`);
                 }
             } else {
                 throw new Error(result.error);
