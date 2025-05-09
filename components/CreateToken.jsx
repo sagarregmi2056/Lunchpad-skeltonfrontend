@@ -112,21 +112,52 @@ const CreateToken = () => {
                         setInitialPrice('1');
                         setSlope('0.1');
                     } else {
-                        // More specific error handling based on error message type
-                        if (curveResult.error && curveResult.error.includes('vec')) {
+                        // More detailed error handling based on error type
+                        if (curveResult.error && (curveResult.error.includes('t is undefined') ||
+                            (curveResult.diagnosticData && curveResult.diagnosticData.errorType === 'IDL_TYPE_MISMATCH'))) {
+                            // Special handling for the "t is undefined" error
+                            setStatus(`Token created with address ${mintAddress}, but bonding curve initialization had an IDL error. Your token was created successfully, but you'll need to initialize the bonding curve separately from the admin panel.`);
+
+                            // Save the token data to localStorage even if curve fails
+                            if (typeof window !== 'undefined') {
+                                const existingTokensStr = localStorage.getItem('userCreatedTokens') || '{}';
+                                const existingTokens = JSON.parse(existingTokensStr);
+
+                                if (!existingTokens[wallet.publicKey.toString()]) {
+                                    existingTokens[wallet.publicKey.toString()] = [];
+                                }
+
+                                // Add token without bonding curve
+                                existingTokens[wallet.publicKey.toString()].push({
+                                    mint: mintAddress,
+                                    name: tokenName,
+                                    symbol: tokenSymbol,
+                                    initialPrice: initialPrice,
+                                    slope: slope,
+                                    explorerUrl: `https://explorer.solana.com/address/${mintAddress}?cluster=devnet`,
+                                    createdAt: new Date().toISOString(),
+                                    needsBondingCurve: true
+                                });
+
+                                localStorage.setItem('userCreatedTokens', JSON.stringify(existingTokens));
+                            }
+                        } else if (curveResult.error && curveResult.error.includes('vec')) {
                             // If it's a type error with 'vec', provide a more helpful message
                             setStatus(`Token created with address ${mintAddress}, but bonding curve initialization failed due to a type mismatch. Please try again with the Initialize tab.`);
-                        } else if (curveResult.error && curveResult.error.includes('t.type is undefined')) {
-                            // If it's the IDL type error
-                            setStatus(`Token created with address ${mintAddress}, but bonding curve initialization had an IDL validation error. Please try initializing separately.`);
                         } else {
                             throw new Error(curveResult.error || "Failed to initialize bonding curve");
                         }
                     }
                 } catch (error) {
                     console.error('Error initializing bonding curve:', error);
-                    // Provide more context and next steps in the error message
-                    setStatus(`Token created with address ${mintAddress}, but bonding curve failed: ${error.message}. You can still use your token, and initialize the bonding curve later.`);
+
+                    // Check for the specific "t is undefined" error
+                    if (error.message && error.message.includes('t is undefined')) {
+                        setStatus(`Token created with address ${mintAddress}, but bonding curve failed due to an IDL error. Your token was created successfully, but you'll need to initialize the bonding curve separately.`);
+                    } else {
+                        // General error message with more context
+                        setStatus(`Token created with address ${mintAddress}, but bonding curve failed: ${error.message}. You can still use your token, and initialize the bonding curve later.`);
+                    }
 
                     // Log detailed error for debugging
                     if (error.logs) {

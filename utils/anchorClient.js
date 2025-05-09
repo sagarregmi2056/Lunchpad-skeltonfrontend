@@ -529,7 +529,7 @@ export const initializeBondingCurve = async (wallet, initialPrice, slope, custom
     
     const connection = new Connection('https://api.devnet.solana.com', 'confirmed');
     
-    // Create an anchor provider
+    // Create an anchor provider with all required methods
     const provider = new AnchorProvider(
       connection,
       {
@@ -541,254 +541,179 @@ export const initializeBondingCurve = async (wallet, initialPrice, slope, custom
       AnchorProvider.defaultOptions()
     );
     
-    // Deep cloning the IDL and making sure it's properly structured before using
-    const deepClonedIdl = JSON.parse(JSON.stringify(fixedIdl));
+    // Deep clone the IDL to avoid modifying the original
+    const deepClonedIdl = JSON.parse(JSON.stringify(idl));
     
-    // Add additional IDL validation specifically for bonding curve initialization
-    const enhancedIdl = (() => {
-      const idl = deepClonedIdl;
-      
-      // Find the initialize instruction
-      const initInstruction = idl.instructions.find(i => i.name === 'initialize');
-      if (initInstruction && initInstruction.args) {
-        // Ensure args have the correct types
-        initInstruction.args.forEach(arg => {
-          if (arg.name === 'initialPrice' || arg.name === 'initial_price' || arg.name === 'slope') {
-            arg.type = 'u64'; // Ensure these are u64 type
-          }
-        });
-      }
-      
-      // Fix any vector type issues throughout the IDL
-      const fixVectorTypes = (obj) => {
-        if (!obj) return;
-        
-        // Handle arrays
-        if (Array.isArray(obj)) {
-          obj.forEach(item => fixVectorTypes(item));
-          return;
-        }
-        
-        // Handle objects
-        if (typeof obj === 'object') {
-          Object.keys(obj).forEach(key => {
-            // Check for vec<type> format in string values
-            if (typeof obj[key] === 'string' && obj[key].startsWith('vec<')) {
-              const innerType = obj[key].substring(4, obj[key].length - 1);
-              obj[key] = {
-                vec: innerType
-              };
-              console.log(`Fixed vector type: ${key} from vec<${innerType}> to { vec: ${innerType} }`);
-            } else if (typeof obj[key] === 'string' && obj[key] === 'pubkey') {
-              // Fix pubkey to publicKey (capital K)
-              obj[key] = 'publicKey';
-              console.log(`Fixed type: ${key} from pubkey to publicKey`);
-            } else {
-              fixVectorTypes(obj[key]);
-            }
-          });
-        }
-      };
-      
-      // Apply vector type fixes
-      fixVectorTypes(idl);
-      
-      // Explicitly define the BondingCurve account structure - use camelCase here
-      const bondingCurveAccount = idl.accounts.find(a => a.name === 'BondingCurve');
-      if (bondingCurveAccount) {
-        bondingCurveAccount.type = {
-          kind: 'struct',
-          fields: [
-            {name: 'authority', type: 'publicKey'},
-            {name: 'initialPrice', type: 'u64'},
-            {name: 'slope', type: 'u64'},
-            {name: 'totalSupply', type: 'u64'},
-            {name: 'tokenMint', type: 'publicKey'},
-            {name: 'bump', type: 'u8'}
-          ]
-        };
-      }
-      
-      // Add camelCase aliases alongside snake_case names for maximum compatibility
-      // This addresses inconsistencies in how field names are referenced
-      if (idl.accounts) {
-        idl.accounts.forEach(account => {
-          if (account.type && account.type.fields) {
-            const newFields = [];
-            
-            account.type.fields.forEach(field => {
-              // Fix pubkey types
-              if (field.type === 'pubkey') {
-                field.type = 'publicKey';
-              }
-              
-              if (field.name.includes('_')) {
-                // Add camelCase version of the field
-                const parts = field.name.split('_');
-                const camelCaseName = parts[0] + parts.slice(1).map(p => p.charAt(0).toUpperCase() + p.slice(1)).join('');
-                newFields.push({...field, name: camelCaseName});
-              }
-            });
-            
-            // Append new fields to existing ones
-            account.type.fields.push(...newFields);
-          }
-        });
-      }
-      
-      // Fix types array if it exists
-      if (idl.types && Array.isArray(idl.types)) {
-        idl.types.forEach(type => {
-          if (type.type && type.type.fields && Array.isArray(type.type.fields)) {
-            type.type.fields.forEach(field => {
-              if (field.type === 'pubkey') {
-                field.type = 'publicKey';
-              }
-            });
-          }
-        });
-      }
-      
-      return idl;
-    })();
+    // Fix the IDL with the validateAndFixIdl function first
+    const fixedIdl = validateAndFixIdl(deepClonedIdl);
     
-    // Create the program with our enhanced IDL
-    const program = new Program(enhancedIdl, PROGRAM_ID, provider);
-    console.log('Program created:', program.programId.toString());
-    
-    // Ensure tokenMint is a PublicKey
-    let tokenMintToUse;
-    if (customTokenMint) {
-      tokenMintToUse = customTokenMint instanceof PublicKey ? 
-        customTokenMint : new PublicKey(customTokenMint);
-    } else {
-      tokenMintToUse = TOKEN_MINT;
-    }
-    
-    console.log('Using token mint:', tokenMintToUse.toString());
-    
-    // Create the bonding curve PDA
-    const [bondingCurveAddress, bump] = await PublicKey.findProgramAddress(
-      [BONDING_CURVE_SEED, tokenMintToUse.toBuffer()],
-      program.programId
-    );
-    
-    console.log('Bonding curve PDA:', bondingCurveAddress.toString());
-    
-    // Check if the account already exists
+    // Create the program with the fixed IDL
     try {
-      const accountInfo = await connection.getAccountInfo(bondingCurveAddress);
+      const program = new Program(fixedIdl, PROGRAM_ID, provider);
+      console.log('Program created:', program.programId.toString());
       
-      if (accountInfo !== null) {
-        console.log('Bonding curve already initialized:', bondingCurveAddress.toString());
+      // Ensure tokenMint is a valid PublicKey
+      let tokenMintToUse;
+      if (customTokenMint) {
+        tokenMintToUse = customTokenMint instanceof PublicKey ? 
+          customTokenMint : new PublicKey(customTokenMint);
+      } else {
+        tokenMintToUse = TOKEN_MINT;
+      }
+      
+      console.log('Using token mint:', tokenMintToUse.toString());
+      
+      // Create the bonding curve PDA
+      const [bondingCurveAddress, bump] = await PublicKey.findProgramAddress(
+        [BONDING_CURVE_SEED, tokenMintToUse.toBuffer()],
+        program.programId
+      );
+      
+      console.log('Bonding curve PDA:', bondingCurveAddress.toString());
+      
+      // Check if the account already exists
+      try {
+        const accountInfo = await connection.getAccountInfo(bondingCurveAddress);
+        
+        if (accountInfo !== null) {
+          console.log('Bonding curve already initialized:', bondingCurveAddress.toString());
+          return { 
+            success: true, 
+            message: 'Bonding curve already exists', 
+            address: bondingCurveAddress.toString(),
+            explorerUrl: getExplorerUrl(bondingCurveAddress.toString())
+          };
+        }
+      } catch (error) {
+        console.error('Error checking account info:', error);
+        // Continue with initialization if there was an error checking
+      }
+      
+      // Ensure we're working with BN objects for Anchor compatibility
+      let initialPriceBN, slopeBN;
+      
+      // Handle different input types for initialPrice
+      if (initialPrice instanceof BN) {
+        initialPriceBN = initialPrice;
+      } else if (typeof initialPrice === 'number') {
+        initialPriceBN = new BN(initialPrice);
+      } else if (typeof initialPrice === 'string') {
+        initialPriceBN = new BN(initialPrice);
+      } else if (initialPrice && typeof initialPrice === 'object' && initialPrice.toString) {
+        // If it's an object with a toString method
+        initialPriceBN = new BN(initialPrice.toString());
+      } else {
+        initialPriceBN = new BN(1000); // Default fallback
+        console.warn('Using fallback initialPrice due to invalid input:', initialPrice);
+      }
+      
+      // Handle different input types for slope
+      if (slope instanceof BN) {
+        slopeBN = slope;
+      } else if (typeof slope === 'number') {
+        slopeBN = new BN(slope);
+      } else if (typeof slope === 'string') {
+        slopeBN = new BN(slope);
+      } else if (slope && typeof slope === 'object' && slope.toString) {
+        // If it's an object with a toString method
+        slopeBN = new BN(slope.toString());
+      } else {
+        slopeBN = new BN(100); // Default fallback
+        console.warn('Using fallback slope due to invalid input:', slope);
+      }
+      
+      console.log('Preparing to call initialize...');
+      console.log('Initial price BN:', initialPriceBN.toString());
+      console.log('Slope BN:', slopeBN.toString());
+      
+      try {
+        // Check if program.methods.initialize exists
+        if (!program.methods || typeof program.methods.initialize !== 'function') {
+          throw new Error('Program initialize method not found. IDL might be incorrectly loaded.');
+        }
+        
+        // Log detailed information about the program instance
+        console.log('Program IDL instructions:', program.idl.instructions.map(i => i.name));
+        
+        // Make sure we're passing BN objects correctly
+        // Build the transaction manually to avoid type errors
+        const tx = await program.methods
+          .initialize(
+            initialPriceBN,
+            slopeBN
+          )
+          .accounts({
+            bondingCurve: bondingCurveAddress,
+            authority: walletPubkey,
+            tokenMint: tokenMintToUse,
+            systemProgram: SystemProgram.programId
+          })
+          .signers([])
+          .rpc({
+            commitment: 'confirmed',
+            skipPreflight: false,
+          });
+        
+        console.log('Initialize transaction sent:', tx);
+        
+        // Save the token data to local storage
+        const tokenData = {
+          mint: tokenMintToUse.toString(),
+          bondingCurve: bondingCurveAddress.toString(),
+          initialPrice: initialPriceBN.toString(),
+          slope: slopeBN.toString(),
+          dateCreated: new Date().toISOString()
+        };
+        
+        const saveResult = saveCreatedToken(walletPubkey.toString(), tokenData);
+        console.log('Token data saved:', saveResult);
+        
         return { 
           success: true, 
-          message: 'Bonding curve already exists', 
+          signature: tx, 
           address: bondingCurveAddress.toString(),
-          explorerUrl: getExplorerUrl(bondingCurveAddress.toString())
+          explorerUrl: getExplorerUrl(tokenMintToUse.toString()),
+          bondingCurveUrl: getExplorerUrl(bondingCurveAddress.toString())
         };
+      } catch (error) {
+        console.error('Error in initialize bonding curve call:', error);
+        
+        // Check if the error is due to IDL issues
+        if (error.message.includes('t is undefined')) {
+          console.error('This appears to be an IDL type mismatch issue.');
+          return { 
+            success: false, 
+            error: 'There was an issue with the IDL structure. Please try again or initialize from a different interface.',
+            diagnosticData: {
+              programId: PROGRAM_ID.toString(),
+              tokenMint: tokenMintToUse.toString(),
+              errorType: 'IDL_TYPE_MISMATCH'
+            }
+          };
+        }
+        
+        return { success: false, error: error.message };
       }
-    } catch (error) {
-      console.error('Error checking account info:', error);
-      // Continue with initialization if there was an error checking
-    }
-    
-    // Ensure we're working with BN objects for Anchor compatibility
-    let initialPriceBN, slopeBN;
-    
-    // Handle different input types for initialPrice
-    if (initialPrice instanceof BN) {
-      initialPriceBN = initialPrice;
-    } else if (typeof initialPrice === 'number') {
-      initialPriceBN = new BN(initialPrice);
-    } else if (typeof initialPrice === 'string') {
-      initialPriceBN = new BN(initialPrice);
-    } else {
-      // If it's an object with a toString method
-      initialPriceBN = new BN(initialPrice.toString());
-    }
-    
-    // Handle different input types for slope
-    if (slope instanceof BN) {
-      slopeBN = slope;
-    } else if (typeof slope === 'number') {
-      slopeBN = new BN(slope);
-    } else if (typeof slope === 'string') {
-      slopeBN = new BN(slope);
-    } else {
-      // If it's an object with a toString method
-      slopeBN = new BN(slope.toString());
-    }
-    
-    console.log('Preparing to call initialize...');
-    console.log('Initial price BN:', initialPriceBN.toString());
-    console.log('Slope BN:', slopeBN.toString());
-    
-    try {
-      // Use methods.initialize to avoid type issues
-      // Log detailed information about the program instance
-      console.log('Program IDL instructions:', program.idl.instructions.map(i => i.name));
-      
-      // Make sure the initialize method exists
-      if (!program.methods.initialize) {
-        console.error('Initialize method not found on program');
-        return { success: false, error: 'Program method "initialize" not found' };
-      }
-      
-      // Log parameters being passed
-      console.log('Passing parameters to initialize:', {
-        initialPriceBNtype: typeof initialPriceBN,
-        initialPriceBNisNumber: typeof initialPriceBN.toNumber === 'function',
-        slopeBNtype: typeof slopeBN,
-        slopeBNisNumber: typeof slopeBN.toNumber === 'function',
-      });
-      
-      // Try using a direct approach with proper types
-      const tx = await program.methods
-        .initialize(
-          initialPriceBN,  // This should be a BN instance
-          slopeBN          // This should be a BN instance
-        )
-        .accounts({
-          bondingCurve: bondingCurveAddress,
-          authority: walletPubkey,
-          tokenMint: tokenMintToUse,
-          systemProgram: SystemProgram.programId
-        })
-        .signers([])  // Add empty signers array explicitly
-        .rpc({
-          commitment: 'confirmed',
-          skipPreflight: false, // Enable preflight to catch errors before submitting
-        });
-      
-      console.log('Initialize transaction sent:', tx);
-      
-      // Save the token data to local storage
-      const tokenData = {
-        mint: tokenMintToUse.toString(),
-        bondingCurve: bondingCurveAddress.toString(),
-        initialPrice: initialPriceBN.toString(),
-        slope: slopeBN.toString(),
-        dateCreated: new Date().toISOString()
-      };
-      
-      const saveResult = saveCreatedToken(walletPubkey.toString(), tokenData);
-      console.log('Token data saved:', saveResult);
-      
+    } catch (programError) {
+      console.error('Error creating program:', programError);
       return { 
-        success: true, 
-        signature: tx, 
-        address: bondingCurveAddress.toString(),
-        explorerUrl: getExplorerUrl(tokenMintToUse.toString()),
-        bondingCurveUrl: getExplorerUrl(bondingCurveAddress.toString())
+        success: false, 
+        error: `Error creating program: ${programError.message}`,
+        diagnosticData: {
+          programId: PROGRAM_ID.toString(),
+          errorType: 'PROGRAM_CREATION_ERROR'
+        }
       };
-    } catch (error) {
-      console.error('Error initializing bonding curve:', error);
-      return { success: false, error: error.message };
     }
   } catch (error) {
     console.error('Error initializing bonding curve:', error);
-    return { success: false, error: error.message };
+    return { 
+      success: false, 
+      error: error.message,
+      diagnosticData: {
+        errorType: 'GENERAL_ERROR'
+      }
+    };
   }
 };
 

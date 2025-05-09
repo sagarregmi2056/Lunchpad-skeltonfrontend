@@ -167,6 +167,32 @@ const PoolInfo = () => {
     const [bondingCurvePDA, setBondingCurvePDA] = useState(null);
     const [tokenMetadata, setTokenMetadata] = useState(null);
 
+    // Helper function to format numbers
+    const formatNumber = (value) => {
+        if (value === undefined || value === null) return "0";
+
+        // If it's already a number, format it
+        if (typeof value === 'number') {
+            if (value < 0.000001) {
+                return value.toExponential(6);
+            }
+            return value.toLocaleString(undefined, {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 6
+            });
+        }
+
+        // If it's a string, try to parse it
+        if (typeof value === 'string') {
+            const num = parseFloat(value);
+            if (!isNaN(num)) {
+                return formatNumber(num);
+            }
+        }
+
+        return value.toString();
+    };
+
     useEffect(() => {
         const fetchPoolInfo = async () => {
             try {
@@ -376,81 +402,70 @@ const PoolInfo = () => {
 
             console.log('Metadata PDA:', metadataPDA.toString());
 
-            // Fetch the account data
-            const metadataAccount = await connection.getAccountInfo(metadataPDA);
+            // Try to get the account info
+            const connection = new Connection('https://api.devnet.solana.com', 'confirmed');
+            const accountInfo = await connection.getAccountInfo(metadataPDA);
 
-            if (!metadataAccount) {
+            if (!accountInfo) {
                 console.log('No metadata found for this token');
+
+                // Fall back to checking localStorage if on-chain metadata is not found
+                if (typeof window !== 'undefined') {
+                    const userTokens = localStorage.getItem('userCreatedTokens') || '{}';
+                    const allUserTokens = Object.values(JSON.parse(userTokens)).flat();
+                    const tokenData = allUserTokens.find(t => t.mint === tokenMint);
+
+                    if (tokenData) {
+                        return {
+                            name: tokenData.name || 'Unknown Token',
+                            symbol: tokenData.symbol || 'TOKEN',
+                            decimals: 9,
+                            uri: '',
+                            source: 'localStorage'
+                        };
+                    }
+                }
+
+                // If still not found, return default values
                 return {
                     name: 'Pool Token',
                     symbol: 'TOKEN',
-                    decimals: 9
+                    decimals: 9,
+                    source: 'default'
                 };
             }
 
-            // Deserialize the metadata account data
-            // The first byte is a version number, then comes the data
-            // Skip first 1 byte for versioning
-            const data = metadataAccount.data.slice(1);
+            // Process the account data
+            // This is a simplified parsing - metaplex SDK would be better in production
+            const data = accountInfo.data;
 
-            // Extract name and symbol from the data
-            // Format defined by the Metaplex token metadata program
-            // https://github.com/metaplex-foundation/metaplex-program-library/blob/master/token-metadata/program/src/state.rs
-
-            // Name length is a u32 (4 bytes)
-            const nameLength = data.slice(0, 4).readUInt32LE(0);
-
-            // Name is UTF-8 encoded string of nameLength
-            const name = new TextDecoder().decode(data.slice(4, 4 + nameLength)).replace(/\0/g, '');
-
-            // Symbol length is a u32 (4 bytes) after the name
-            const symbolLengthStart = 4 + nameLength;
-            const symbolLength = data.slice(symbolLengthStart, symbolLengthStart + 4).readUInt32LE(0);
-
-            // Symbol is UTF-8 encoded string of symbolLength
-            const symbol = new TextDecoder().decode(
-                data.slice(symbolLengthStart + 4, symbolLengthStart + 4 + symbolLength)
-            ).replace(/\0/g, '');
-
-            console.log('Token metadata from blockchain:', { name, symbol });
-
-            // Return the fetched metadata
-            return {
-                name: name || 'Unknown',
-                symbol: symbol || 'UNKNOWN',
-                decimals: 9 // We could fetch this from the token mint account if needed
-            };
-        } catch (error) {
-            console.error('Error fetching token metadata from blockchain:', error);
-
-            // Fallback to localStorage as backup
-            try {
-                if (typeof window !== 'undefined') {
-                    const tokens = localStorage.getItem('userCreatedTokens') || '{}';
-                    const parsedTokens = JSON.parse(tokens);
-
-                    // Look through all wallet's tokens to find a match
-                    for (const walletAddress in parsedTokens) {
-                        const tokenList = parsedTokens[walletAddress];
-                        const foundToken = tokenList.find(t => t.mint === tokenMint);
-                        if (foundToken) {
-                            return {
-                                name: foundToken.name || 'Unknown',
-                                symbol: foundToken.symbol || 'UNKNOWN',
-                                decimals: foundToken.decimals || 9
-                            };
-                        }
-                    }
-                }
-            } catch (localStorageError) {
-                console.error('Error fetching from localStorage:', localStorageError);
+            // Skip the first few bytes which are header/format info
+            // This is a simplified approach and may need adjustment
+            let nameLength = data[32];
+            let name = '';
+            for (let i = 0; i < nameLength; i++) {
+                name += String.fromCharCode(data[33 + i]);
             }
 
-            // Return default values if both methods fail
+            let symbolLength = data[64 + nameLength];
+            let symbol = '';
+            for (let i = 0; i < symbolLength; i++) {
+                symbol += String.fromCharCode(data[65 + nameLength + i]);
+            }
+
+            return {
+                name: name.trim(),
+                symbol: symbol.trim(),
+                decimals: 9, // Default SPL token decimals
+                source: 'blockchain'
+            };
+        } catch (error) {
+            console.error('Error fetching token metadata:', error);
             return {
                 name: 'Pool Token',
                 symbol: 'TOKEN',
-                decimals: 9
+                decimals: 9,
+                source: 'error'
             };
         }
     };
@@ -571,81 +586,126 @@ const PoolInfo = () => {
                         <div className="p-6 space-y-4">
                             {/* Token Name and Symbol */}
                             {tokenMetadata && (
-                                <div className="mb-5 bg-gray-800/40 rounded-lg p-4 border border-gray-700/40">
-                                    <div className="flex items-center justify-between mb-3">
+                                <div className="mb-5 bg-gray-800/60 rounded-lg p-4 border border-gray-700/50 flex items-center justify-between">
+                                    <div className="flex items-center">
+                                        <div className="h-10 w-10 rounded-full bg-gradient-to-br from-purple-600 to-indigo-600 flex items-center justify-center text-white font-semibold mr-3">
+                                            {tokenMetadata.symbol?.charAt(0) || '?'}
+                                        </div>
                                         <div>
-                                            <h4 className="text-sm font-medium text-purple-300">Token Name</h4>
-                                            <p className="text-lg font-bold text-white mt-1">{tokenMetadata.name}</p>
-                                        </div>
-                                        <div className="text-right">
-                                            <h4 className="text-sm font-medium text-purple-300">Symbol</h4>
-                                            <p className="text-lg font-bold text-white mt-1">{tokenMetadata.symbol}</p>
+                                            <h3 className="font-medium text-white">{tokenMetadata.name || 'Unknown Token'}</h3>
+                                            <div className="flex items-center">
+                                                <span className="text-xs bg-purple-900/40 text-purple-300 px-2 py-0.5 rounded mr-2">
+                                                    ${tokenMetadata.symbol || 'TOKEN'}
+                                                </span>
+                                                <span className="text-xs text-gray-400">
+                                                    {tokenMetadata.source === 'blockchain' ? 'On-chain metadata' :
+                                                        tokenMetadata.source === 'localStorage' ? 'Local metadata' :
+                                                            'Default metadata'}
+                                                </span>
+                                            </div>
                                         </div>
                                     </div>
-                                    <div className="text-xs text-purple-400/70">
-                                        Token metadata retrieved from creation records
-                                    </div>
+                                    <a
+                                        href={`https://explorer.solana.com/address/${poolData?.tokenMint}?cluster=devnet`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-purple-400 hover:text-purple-300 transition-colors"
+                                    >
+                                        <IconExternal className="h-5 w-5" />
+                                    </a>
                                 </div>
                             )}
 
-                            <div className="relative">
-                                {copySuccess === 'Token mint' && (
-                                    <div className="absolute right-0 top-0 text-xs text-green-400 bg-green-900/40 px-2 py-1 rounded animate-fade-in-out">
-                                        Copied!
+                            {/* Token Information Grid */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="bg-gray-800/40 rounded-lg p-3 border border-gray-700/30">
+                                    <div className="text-xs text-gray-400 mb-1 flex items-center">
+                                        <IconSupply className="h-3 w-3 mr-1 text-purple-400" />
+                                        Token Mint
                                     </div>
-                                )}
-                                <span className="text-sm font-medium text-purple-300">Token Mint Address</span>
-                                <div className="mt-1.5 p-3 bg-gray-800/80 rounded-lg border border-gray-700/60 flex justify-between items-center">
-                                    <p className="text-xs font-mono text-gray-300 truncate">{poolData.tokenMint}</p>
-                                    <button
-                                        className="ml-2 text-purple-400 hover:text-purple-300 transition-colors p-1.5 rounded-full hover:bg-purple-900/30"
-                                        onClick={() => copyToClipboard(poolData.tokenMint, 'Token mint')}
-                                    >
-                                        <IconCopy className="h-4 w-4" />
-                                    </button>
+                                    <div className="flex items-center">
+                                        <span className="text-sm text-gray-300 font-mono truncate">
+                                            {poolData?.tokenMint || 'Loading...'}
+                                        </span>
+                                        <button
+                                            onClick={() => copyToClipboard(poolData?.tokenMint, 'Token mint')}
+                                            className="ml-2 text-purple-400 hover:text-purple-300 transition"
+                                        >
+                                            <IconCopy className="h-4 w-4" />
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="bg-gray-800/40 rounded-lg p-3 border border-gray-700/30">
+                                    <div className="text-xs text-gray-400 mb-1 flex items-center">
+                                        <IconPrice className="h-3 w-3 mr-1 text-purple-400" />
+                                        Current Supply
+                                    </div>
+                                    <p className="text-gray-300 font-medium">{formatNumber(poolData?.supply)} {tokenMetadata?.symbol || 'tokens'}</p>
+                                </div>
+
+                                <div className="bg-gray-800/40 rounded-lg p-3 border border-gray-700/30">
+                                    <div className="text-xs text-gray-400 mb-1 flex items-center">
+                                        <IconPrice className="h-3 w-3 mr-1 text-purple-400" />
+                                        Initial Price
+                                    </div>
+                                    <p className="text-gray-300 font-medium">{formatNumber(poolData?.initialPrice)} SOL</p>
+                                </div>
+
+                                <div className="bg-gray-800/40 rounded-lg p-3 border border-gray-700/30">
+                                    <div className="text-xs text-gray-400 mb-1 flex items-center">
+                                        <IconSlope className="h-3 w-3 mr-1 text-purple-400" />
+                                        Price Slope
+                                    </div>
+                                    <p className="text-gray-300 font-medium">{formatNumber(poolData?.slope)} SOL</p>
                                 </div>
                             </div>
 
-                            <div className="relative">
-                                {copySuccess === 'Authority' && (
-                                    <div className="absolute right-0 top-0 text-xs text-green-400 bg-green-900/40 px-2 py-1 rounded animate-fade-in-out">
-                                        Copied!
+                            {/* Bonding Curve Information */}
+                            <div className="mt-4 space-y-4">
+                                <h4 className="text-sm font-medium text-white">Bonding Curve Parameters</h4>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="bg-gray-800/40 rounded-lg p-3 border border-gray-700/30">
+                                        <div className="text-xs text-gray-400 mb-1 flex items-center">
+                                            <IconPrice className="h-3 w-3 mr-1 text-purple-400" />
+                                            Initial Price
+                                        </div>
+                                        <p className="text-gray-300 font-medium">{formatNumber(poolData?.initialPrice)} SOL</p>
                                     </div>
-                                )}
-                                <span className="text-sm font-medium text-purple-300">Authority</span>
-                                <div className="mt-1.5 p-3 bg-gray-800/80 rounded-lg border border-gray-700/60 flex justify-between items-center">
-                                    <p className="text-xs font-mono text-gray-300 truncate">{poolData.authority}</p>
-                                    <button
-                                        className="ml-2 text-purple-400 hover:text-purple-300 transition-colors p-1.5 rounded-full hover:bg-purple-900/30"
-                                        onClick={() => copyToClipboard(poolData.authority, 'Authority')}
-                                    >
-                                        <IconCopy className="h-4 w-4" />
-                                    </button>
-                                </div>
-                            </div>
 
-                            <div className="pt-3 border-t border-gray-700/40">
-                                <span className="text-sm font-medium text-purple-300">Explorer Links</span>
-                                <div className="mt-2 flex flex-wrap gap-3">
-                                    <a
-                                        href={`https://explorer.solana.com/address/${poolData.tokenMint}?cluster=devnet`}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="flex items-center px-3 py-2 rounded-lg text-sm font-medium bg-purple-900/30 text-purple-300 hover:bg-purple-800/40 transition-colors border border-purple-800/40"
-                                    >
-                                        <IconExternal className="h-4 w-4 mr-1.5" />
-                                        View Token on Explorer
-                                    </a>
+                                    <div className="bg-gray-800/40 rounded-lg p-3 border border-gray-700/30">
+                                        <div className="text-xs text-gray-400 mb-1 flex items-center">
+                                            <IconSlope className="h-3 w-3 mr-1 text-purple-400" />
+                                            Price Slope
+                                        </div>
+                                        <p className="text-gray-300 font-medium">{formatNumber(poolData?.slope)} SOL</p>
+                                    </div>
 
-                                    <a
-                                        href={`https://explorer.solana.com/address/${PROGRAM_ID.toString()}?cluster=devnet`}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="flex items-center px-3 py-2 rounded-lg text-sm font-medium bg-indigo-900/30 text-indigo-300 hover:bg-indigo-800/40 transition-colors border border-indigo-800/40"
-                                    >
-                                        <IconExternal className="h-4 w-4 mr-1.5" />
-                                        View Program on Explorer
-                                    </a>
+                                    <div className="bg-gray-800/40 rounded-lg p-3 border border-gray-700/30 md:col-span-2">
+                                        <div className="text-xs text-gray-400 mb-1 flex items-center">
+                                            <IconWallet className="h-3 w-3 mr-1 text-purple-400" />
+                                            Bonding Curve Address
+                                        </div>
+                                        <div className="flex items-center">
+                                            <span className="text-sm text-gray-300 font-mono truncate">
+                                                {poolData?.bondingCurvePDA || 'Loading...'}
+                                            </span>
+                                            <button
+                                                onClick={() => copyToClipboard(poolData?.bondingCurvePDA, 'Bonding curve PDA')}
+                                                className="ml-2 text-purple-400 hover:text-purple-300 transition"
+                                            >
+                                                <IconCopy className="h-4 w-4" />
+                                            </button>
+                                            <a
+                                                href={`https://explorer.solana.com/address/${poolData?.bondingCurvePDA}?cluster=devnet`}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="ml-2 text-purple-400 hover:text-purple-300 transition"
+                                            >
+                                                <IconExternal className="h-4 w-4" />
+                                            </a>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>

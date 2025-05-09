@@ -1,5 +1,5 @@
-import CreateToken from '../../components/CreateToken';
+import AdminLayout from '../../components/AdminLayout';
 
 export default function AdminCreateToken() {
-    return <CreateToken />;
+    return <AdminLayout defaultTab="create" />;
 } 
