@@ -292,8 +292,15 @@ export const initializeBondingCurve = async (wallet, initialPrice, slope, custom
     const program = new Program(idl, PROGRAM_ID, provider);
     console.log('Program created:', program.programId.toString());
     
-    // Use the provided token mint or the default one
-    const tokenMintToUse = customTokenMint || TOKEN_MINT;
+    // Ensure tokenMint is a PublicKey
+    let tokenMintToUse;
+    if (customTokenMint) {
+      tokenMintToUse = customTokenMint instanceof PublicKey ? 
+        customTokenMint : new PublicKey(customTokenMint);
+    } else {
+      tokenMintToUse = TOKEN_MINT;
+    }
+    
     console.log('Using token mint:', tokenMintToUse.toString());
     
     // Create the bonding curve PDA
@@ -301,6 +308,8 @@ export const initializeBondingCurve = async (wallet, initialPrice, slope, custom
       [BONDING_CURVE_SEED, tokenMintToUse.toBuffer()],
       program.programId
     );
+    
+    console.log('Bonding curve PDA:', bondingCurveAddress.toString());
     
     // Check if the account already exists
     try {
@@ -320,8 +329,7 @@ export const initializeBondingCurve = async (wallet, initialPrice, slope, custom
       // Continue with initialization if there was an error checking
     }
     
-    // Ensure we're working with BN objects or numbers
-    // Convert initialPrice and slope to BN
+    // Ensure we're working with BN objects
     // Make sure we're explicitly handling the BN conversion
     let initialPriceBN, slopeBN;
     

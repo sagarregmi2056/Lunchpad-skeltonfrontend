@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Connection, PublicKey } from '@solana/web3.js';
+import { Connection, PublicKey, LAMPORTS_PER_SOL } from '@solana/web3.js';
 import { PROGRAM_ID, TOKEN_MINT } from '../utils/anchorClient';
 import { Program } from '@project-serum/anchor';
 import idl from '../utils/idl.json';
@@ -14,19 +14,23 @@ const PoolInfo = () => {
     const [poolData, setPoolData] = useState(null);
     const [error, setError] = useState(null);
     const [copySuccess, setCopySuccess] = useState('');
+    const [bondingCurvePDA, setBondingCurvePDA] = useState(null);
 
     useEffect(() => {
         const fetchPoolInfo = async () => {
             try {
                 setLoading(true);
 
-                // Find the PDA for the bonding curve
-                const [bondingCurvePDA] = await PublicKey.findProgramAddress(
-                    [BONDING_CURVE_SEED],
+                // Find the PDA for the bonding curve - using token mint in seeds
+                const [pda] = await PublicKey.findProgramAddress(
+                    [BONDING_CURVE_SEED, TOKEN_MINT.toBuffer()],
                     PROGRAM_ID
                 );
 
-                // Create a provider for read-only operations
+                setBondingCurvePDA(pda);
+                console.log('Bonding curve PDA:', pda.toString());
+
+                // Create a connection for read-only operations
                 const provider = {
                     connection,
                     publicKey: PublicKey.default,
@@ -36,7 +40,13 @@ const PoolInfo = () => {
                 const program = new Program(idl, PROGRAM_ID, provider);
 
                 // Fetch the bonding curve account data
-                const bondingCurveAccount = await program.account.bondingCurve.fetch(bondingCurvePDA);
+                console.log('Fetching bonding curve account data...');
+                const bondingCurveAccount = await program.account.bondingCurve.fetch(pda);
+                console.log('Bonding curve data:', bondingCurveAccount);
+
+                if (!bondingCurveAccount) {
+                    throw new Error('Bonding curve account not found');
+                }
 
                 // Safely convert BN to number (avoiding toNumber() which can overflow)
                 // Using string conversion and parsing with decimal representation
@@ -46,16 +56,18 @@ const PoolInfo = () => {
 
                 // Format the data for display, using string operations for safety
                 const formattedData = {
-                    initialPrice: parseFloat(initialPriceBN) / 1e9,
-                    slope: parseFloat(slopeBN) / 1e9,
+                    initialPrice: parseFloat(initialPriceBN) / LAMPORTS_PER_SOL,
+                    slope: parseFloat(slopeBN) / LAMPORTS_PER_SOL,
                     supply: parseFloat(totalSupplyBN) / 1e9,
                     initialPriceBN,
                     slopeBN,
                     supplyBN: totalSupplyBN,
                     authority: bondingCurveAccount.authority.toString(),
-                    tokenMint: TOKEN_MINT.toString(),
+                    tokenMint: bondingCurveAccount.tokenMint.toString(),
+                    bondingCurvePDA: pda.toString()
                 };
 
+                console.log('Formatted pool data:', formattedData);
                 setPoolData(formattedData);
                 setError(null);
             } catch (err) {
