@@ -329,11 +329,10 @@ export const initializeBondingCurve = async (wallet, initialPrice, slope, custom
       // Continue with initialization if there was an error checking
     }
     
-    // Ensure we're working with BN objects
-    // Make sure we're explicitly handling the BN conversion
+    // Ensure we're working with BN objects for Anchor compatibility
     let initialPriceBN, slopeBN;
     
-    // Check if initialPrice is already a BN
+    // Handle different input types for initialPrice
     if (initialPrice instanceof BN) {
       initialPriceBN = initialPrice;
     } else if (typeof initialPrice === 'number') {
@@ -341,11 +340,11 @@ export const initializeBondingCurve = async (wallet, initialPrice, slope, custom
     } else if (typeof initialPrice === 'string') {
       initialPriceBN = new BN(initialPrice);
     } else {
-      // If it's an object that has a toString method (like BN), use that
+      // If it's an object with a toString method
       initialPriceBN = new BN(initialPrice.toString());
     }
     
-    // Check if slope is already a BN
+    // Handle different input types for slope
     if (slope instanceof BN) {
       slopeBN = slope;
     } else if (typeof slope === 'number') {
@@ -353,7 +352,7 @@ export const initializeBondingCurve = async (wallet, initialPrice, slope, custom
     } else if (typeof slope === 'string') {
       slopeBN = new BN(slope);
     } else {
-      // If it's an object that has a toString method (like BN), use that
+      // If it's an object with a toString method
       slopeBN = new BN(slope.toString());
     }
     
@@ -361,38 +360,59 @@ export const initializeBondingCurve = async (wallet, initialPrice, slope, custom
     console.log('Initial price BN:', initialPriceBN.toString());
     console.log('Slope BN:', slopeBN.toString());
     
-    // Call initialize on the program
-    const tx = await program.methods
-      .initialize(initialPriceBN, slopeBN)
-      .accounts({
-        bondingCurve: bondingCurveAddress,
-        authority: walletPubkey,
-        tokenMint: tokenMintToUse,
-        systemProgram: SystemProgram.programId
-      })
-      .rpc();
-    
-    console.log('Initialize transaction sent:', tx);
-    
-    // Save the token data to local storage
-    const tokenData = {
-      mint: tokenMintToUse.toString(),
-      bondingCurve: bondingCurveAddress.toString(),
-      initialPrice: initialPriceBN.toString(),
-      slope: slopeBN.toString(),
-      dateCreated: new Date().toISOString()
-    };
-    
-    const saveResult = saveCreatedToken(walletPubkey.toString(), tokenData);
-    console.log('Token data saved:', saveResult);
-    
-    return { 
-      success: true, 
-      signature: tx, 
-      address: bondingCurveAddress.toString(),
-      explorerUrl: getExplorerUrl(tokenMintToUse.toString()),
-      bondingCurveUrl: getExplorerUrl(bondingCurveAddress.toString())
-    };
+    // Convert BN objects to u64 for Anchor compatibility
+    // The program requires u64 type, which is what BN.toNumber() can represent if within range
+    // Only use numeric values, not BN objects directly in the call
+    try {
+      // For Anchor Program methods, we need to ensure the types match the IDL
+      // Use raw BN objects since @project-serum/anchor expects BN for u64 params
+      // Try to use the BN objects directly without any manual conversion
+      
+      // Log detailed type information for debugging
+      console.log('initialPrice type:', typeof initialPriceBN);
+      console.log('slope type:', typeof slopeBN);
+      console.log('initialPrice is BN:', initialPriceBN instanceof BN);
+      console.log('slope is BN:', slopeBN instanceof BN);
+      
+      // Use program.rpc.initialize instead to have more control
+      const tx = await program.rpc.initialize(
+        initialPriceBN,  
+        slopeBN,         
+        {
+          accounts: {
+            bondingCurve: bondingCurveAddress,
+            authority: walletPubkey,
+            tokenMint: tokenMintToUse,
+            systemProgram: SystemProgram.programId
+          }
+        }
+      );
+      
+      console.log('Initialize transaction sent:', tx);
+      
+      // Save the token data to local storage
+      const tokenData = {
+        mint: tokenMintToUse.toString(),
+        bondingCurve: bondingCurveAddress.toString(),
+        initialPrice: initialPriceBN.toString(),
+        slope: slopeBN.toString(),
+        dateCreated: new Date().toISOString()
+      };
+      
+      const saveResult = saveCreatedToken(walletPubkey.toString(), tokenData);
+      console.log('Token data saved:', saveResult);
+      
+      return { 
+        success: true, 
+        signature: tx, 
+        address: bondingCurveAddress.toString(),
+        explorerUrl: getExplorerUrl(tokenMintToUse.toString()),
+        bondingCurveUrl: getExplorerUrl(bondingCurveAddress.toString())
+      };
+    } catch (error) {
+      console.error('Error initializing bonding curve:', error);
+      return { success: false, error: error.message };
+    }
   } catch (error) {
     console.error('Error initializing bonding curve:', error);
     return { success: false, error: error.message };

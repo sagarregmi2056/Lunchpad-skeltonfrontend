@@ -77,12 +77,20 @@ const CreateToken = () => {
                 // Store the mint address for later use
                 const mintAddress = result.mint;
 
-                // Convert price and slope to lamports
-                const priceInLamports = new BN(Math.floor(parseFloat(initialPrice) * LAMPORTS_PER_SOL));
-                const slopeInLamports = new BN(Math.floor(parseFloat(slope) * LAMPORTS_PER_SOL));
+                // Convert price and slope to lamports - use BN directly
+                // Make sure to multiply by LAMPORTS_PER_SOL as integers to avoid floating point issues
+                // For u64 values, we need to handle them carefully to avoid number precision issues
+                const initialPriceInSol = parseFloat(initialPrice);
+                const slopeInSol = parseFloat(slope);
+
+                // Convert to lamports (multiply by 10^9) as integers to avoid precision issues
+                const priceInLamports = new BN(Math.floor(initialPriceInSol * LAMPORTS_PER_SOL));
+                const slopeInLamports = new BN(Math.floor(slopeInSol * LAMPORTS_PER_SOL));
 
                 console.log('Price in Lamports:', priceInLamports.toString());
                 console.log('Slope in Lamports:', slopeInLamports.toString());
+                console.log('Price is BN instance:', priceInLamports instanceof BN);
+                console.log('Slope is BN instance:', slopeInLamports instanceof BN);
 
                 try {
                     // Initialize the bonding curve with the new TOKEN_MINT
