@@ -5,6 +5,7 @@ import { initializeBondingCurve } from '../utils/anchorClient';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { IconCoin, IconInfo, IconSuccess, IconError, LoadingSpinner } from './Icons';
+import { BN } from '@project-serum/anchor';
 
 const CreateToken = () => {
     const [loading, setLoading] = useState(false);
@@ -77,11 +78,11 @@ const CreateToken = () => {
                 const mintAddress = result.mint;
 
                 // Convert price and slope to lamports
-                const priceInLamports = Math.floor(parseFloat(initialPrice) * LAMPORTS_PER_SOL);
-                const slopeInLamports = Math.floor(parseFloat(slope) * LAMPORTS_PER_SOL);
+                const priceInLamports = new BN(Math.floor(parseFloat(initialPrice) * LAMPORTS_PER_SOL));
+                const slopeInLamports = new BN(Math.floor(parseFloat(slope) * LAMPORTS_PER_SOL));
 
-                console.log('Price in Lamports:', priceInLamports);
-                console.log('Slope in Lamports:', slopeInLamports);
+                console.log('Price in Lamports:', priceInLamports.toString());
+                console.log('Slope in Lamports:', slopeInLamports.toString());
 
                 try {
                     // Initialize the bonding curve with the new TOKEN_MINT

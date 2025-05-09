@@ -320,9 +320,34 @@ export const initializeBondingCurve = async (wallet, initialPrice, slope, custom
       // Continue with initialization if there was an error checking
     }
     
+    // Ensure we're working with BN objects or numbers
     // Convert initialPrice and slope to BN
-    const initialPriceBN = new BN(initialPrice);
-    const slopeBN = new BN(slope);
+    // Make sure we're explicitly handling the BN conversion
+    let initialPriceBN, slopeBN;
+    
+    // Check if initialPrice is already a BN
+    if (initialPrice instanceof BN) {
+      initialPriceBN = initialPrice;
+    } else if (typeof initialPrice === 'number') {
+      initialPriceBN = new BN(initialPrice);
+    } else if (typeof initialPrice === 'string') {
+      initialPriceBN = new BN(initialPrice);
+    } else {
+      // If it's an object that has a toString method (like BN), use that
+      initialPriceBN = new BN(initialPrice.toString());
+    }
+    
+    // Check if slope is already a BN
+    if (slope instanceof BN) {
+      slopeBN = slope;
+    } else if (typeof slope === 'number') {
+      slopeBN = new BN(slope);
+    } else if (typeof slope === 'string') {
+      slopeBN = new BN(slope);
+    } else {
+      // If it's an object that has a toString method (like BN), use that
+      slopeBN = new BN(slope.toString());
+    }
     
     console.log('Preparing to call initialize...');
     console.log('Initial price BN:', initialPriceBN.toString());
@@ -345,8 +370,8 @@ export const initializeBondingCurve = async (wallet, initialPrice, slope, custom
     const tokenData = {
       mint: tokenMintToUse.toString(),
       bondingCurve: bondingCurveAddress.toString(),
-      initialPrice: initialPrice.toString(),
-      slope: slope.toString(),
+      initialPrice: initialPriceBN.toString(),
+      slope: slopeBN.toString(),
       dateCreated: new Date().toISOString()
     };
     
