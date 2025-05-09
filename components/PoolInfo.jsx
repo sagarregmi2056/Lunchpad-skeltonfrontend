@@ -34,6 +34,10 @@ const prepareIdl = (originalIdl) => {
                         vec: innerType
                     };
                     console.log(`Fixed vector type: ${key} from vec<${innerType}> to proper format`);
+                } else if (typeof obj[key] === 'string' && obj[key] === 'pubkey') {
+                    // Fix pubkey to publicKey
+                    obj[key] = 'publicKey';
+                    console.log(`Fixed type: ${key} from pubkey to publicKey`);
                 } else {
                     fixVectorTypes(obj[key]);
                 }
@@ -50,11 +54,11 @@ const prepareIdl = (originalIdl) => {
         bondingCurveAccount.type = {
             kind: 'struct',
             fields: [
-                { name: 'authority', type: 'pubkey' },
+                { name: 'authority', type: 'publicKey' },
                 { name: 'initialPrice', type: 'u64' },
                 { name: 'slope', type: 'u64' },
                 { name: 'totalSupply', type: 'u64' },
-                { name: 'tokenMint', type: 'pubkey' },
+                { name: 'tokenMint', type: 'publicKey' },
                 { name: 'bump', type: 'u8' }
             ]
         };
@@ -65,6 +69,11 @@ const prepareIdl = (originalIdl) => {
     const fixFieldNames = (account) => {
         if (account && account.type && account.type.fields) {
             account.type.fields.forEach(field => {
+                // Fix pubkey type to publicKey
+                if (field.type === 'pubkey') {
+                    field.type = 'publicKey';
+                }
+
                 // Convert snake_case to camelCase if needed
                 if (field.name.includes('_')) {
                     const parts = field.name.split('_');
@@ -99,6 +108,11 @@ const prepareIdl = (originalIdl) => {
                         const innerType = arg.type.substring(4, arg.type.length - 1);
                         arg.type = { vec: innerType };
                     }
+
+                    // Fix pubkey type
+                    if (arg.type === 'pubkey') {
+                        arg.type = 'publicKey';
+                    }
                 });
             }
         });
@@ -117,13 +131,26 @@ const prepareIdl = (originalIdl) => {
             type: {
                 kind: "struct",
                 fields: [
-                    { name: "authority", type: "pubkey" },
+                    { name: "authority", type: "publicKey" },
                     { name: "initialPrice", type: "u64" },
                     { name: "slope", type: "u64" },
                     { name: "totalSupply", type: "u64" },
-                    { name: "tokenMint", type: "pubkey" },
+                    { name: "tokenMint", type: "publicKey" },
                     { name: "bump", type: "u8" }
                 ]
+            }
+        });
+    }
+
+    // Fix existing types to ensure pubkey is changed to publicKey
+    if (fixedIdl.types && Array.isArray(fixedIdl.types)) {
+        fixedIdl.types.forEach(type => {
+            if (type.type && type.type.fields && Array.isArray(type.type.fields)) {
+                type.type.fields.forEach(field => {
+                    if (field.type === 'pubkey') {
+                        field.type = 'publicKey';
+                    }
+                });
             }
         });
     }

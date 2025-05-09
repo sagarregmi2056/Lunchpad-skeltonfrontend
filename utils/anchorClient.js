@@ -100,6 +100,10 @@ const validateAndFixIdl = (idlData) => {
           // Set in both array format and vec format to maximize compatibility
           obj[key] = { vec: innerType };
           console.log(`Fixed vector type: ${key} from vec<${innerType}> to vec format`);
+        } else if (typeof obj[key] === 'string' && obj[key] === 'pubkey') {
+          // Fix pubkey to publicKey (capital K)
+          obj[key] = 'publicKey';
+          console.log(`Fixed type: ${key} from pubkey to publicKey`);
         } else {
           fixVectorTypes(obj[key]);
         }
@@ -124,12 +128,18 @@ const validateAndFixIdl = (idlData) => {
         };
       }
       
-      // Add camelCase aliases for fields if they use snake_case
+      // Fix pubkey types and add camelCase aliases for fields if they use snake_case
       if (account.type && account.type.fields) {
         const newFields = [];
         
-        // Check each field for snake_case
+        // Check each field for snake_case and fix pubkey types
         account.type.fields.forEach(field => {
+          // Fix pubkey types
+          if (field.type === 'pubkey') {
+            field.type = 'publicKey';
+            console.log(`Fixed pubkey type to publicKey for field ${field.name}`);
+          }
+          
           if (field.name && field.name.includes('_')) {
             // Create camelCase version
             const parts = field.name.split('_');
@@ -161,19 +171,30 @@ const validateAndFixIdl = (idlData) => {
       type: {
         kind: "struct",
         fields: [
-          { name: "authority", type: "pubkey" },
+          { name: "authority", type: "publicKey" }, // Change pubkey to publicKey
           { name: "initialPrice", type: "u64" },
           { name: "slope", type: "u64" },
           { name: "totalSupply", type: "u64" },
-          { name: "tokenMint", type: "pubkey" },
+          { name: "tokenMint", type: "publicKey" }, // Change pubkey to publicKey
           { name: "bump", type: "u8" },
           // Include snake_case versions as well for compatibility
           { name: "initial_price", type: "u64" },
           { name: "total_supply", type: "u64" },
-          { name: "token_mint", type: "pubkey" }
+          { name: "token_mint", type: "publicKey" } // Change pubkey to publicKey
         ]
       }
     });
+  } else {
+    // Ensure existing BondingCurve type has correct field types
+    const bondingCurveType = fixedIdl.types.find(t => t.name === 'BondingCurve');
+    if (bondingCurveType && bondingCurveType.type && bondingCurveType.type.fields) {
+      bondingCurveType.type.fields.forEach(field => {
+        if (field.type === 'pubkey') {
+          field.type = 'publicKey';
+          console.log(`Fixed pubkey type to publicKey for field ${field.name} in BondingCurve type`);
+        }
+      });
+    }
   }
   
   // Fix instruction parameter types
@@ -187,6 +208,12 @@ const validateAndFixIdl = (idlData) => {
             arg.type = { 
               vec: innerType 
             };
+          }
+          
+          // Fix pubkey types
+          if (arg.type === 'pubkey') {
+            arg.type = 'publicKey';
+            console.log(`Fixed pubkey type to publicKey for arg ${arg.name}`);
           }
           
           // Ensure all BN/u64/i64 types are properly formatted
@@ -248,18 +275,77 @@ export const useAnchorProgram = () => {
             AnchorProvider.defaultOptions()
           );
           
+          // Ensure IDL is properly fixed before creating program
+          // Apply additional fixes specifically for pubkey vs publicKey issues
+          const enhancedIdl = (() => {
+            const idlCopy = JSON.parse(JSON.stringify(fixedIdl));
+            
+            // Function to recursively fix pubkey -> publicKey
+            const fixPubkeyTypes = (obj) => {
+              if (!obj) return;
+              
+              // Handle arrays
+              if (Array.isArray(obj)) {
+                obj.forEach(item => fixPubkeyTypes(item));
+                return;
+              }
+              
+              // Handle objects
+              if (typeof obj === 'object') {
+                Object.keys(obj).forEach(key => {
+                  if (typeof obj[key] === 'string' && obj[key] === 'pubkey') {
+                    obj[key] = 'publicKey';
+                  } else {
+                    fixPubkeyTypes(obj[key]);
+                  }
+                });
+              }
+            };
+            
+            // Apply fixes
+            fixPubkeyTypes(idlCopy);
+            
+            // Specifically check account fields
+            if (idlCopy.accounts && Array.isArray(idlCopy.accounts)) {
+              idlCopy.accounts.forEach(account => {
+                if (account.type && account.type.fields) {
+                  account.type.fields.forEach(field => {
+                    if (field.type === 'pubkey') {
+                      field.type = 'publicKey';
+                    }
+                  });
+                }
+              });
+            }
+            
+            // Check types
+            if (idlCopy.types && Array.isArray(idlCopy.types)) {
+              idlCopy.types.forEach(type => {
+                if (type.type && type.type.fields) {
+                  type.type.fields.forEach(field => {
+                    if (field.type === 'pubkey') {
+                      field.type = 'publicKey';
+                    }
+                  });
+                }
+              });
+            }
+            
+            return idlCopy;
+          })();
+          
           // Check idl structure before creating program
           console.log('IDL structure check:', {
-            address: fixedIdl.address,
-            metadata: fixedIdl.metadata,
-            hasInstructions: !!fixedIdl.instructions,
-            instructionsCount: fixedIdl.instructions?.length
+            address: enhancedIdl.address,
+            metadata: enhancedIdl.metadata,
+            hasInstructions: !!enhancedIdl.instructions,
+            instructionsCount: enhancedIdl.instructions?.length
           });
           
           // Create program with a try/catch to identify specific errors
           let anchorProgram;
           try {
-            anchorProgram = new Program(fixedIdl, PROGRAM_ID, provider);
+            anchorProgram = new Program(enhancedIdl, PROGRAM_ID, provider);
             console.log('Program created successfully');
           } catch (progError) {
             console.error('Error creating program:', progError);
@@ -493,6 +579,10 @@ export const initializeBondingCurve = async (wallet, initialPrice, slope, custom
                 vec: innerType
               };
               console.log(`Fixed vector type: ${key} from vec<${innerType}> to { vec: ${innerType} }`);
+            } else if (typeof obj[key] === 'string' && obj[key] === 'pubkey') {
+              // Fix pubkey to publicKey (capital K)
+              obj[key] = 'publicKey';
+              console.log(`Fixed type: ${key} from pubkey to publicKey`);
             } else {
               fixVectorTypes(obj[key]);
             }
@@ -509,11 +599,11 @@ export const initializeBondingCurve = async (wallet, initialPrice, slope, custom
         bondingCurveAccount.type = {
           kind: 'struct',
           fields: [
-            {name: 'authority', type: 'pubkey'},
+            {name: 'authority', type: 'publicKey'},
             {name: 'initialPrice', type: 'u64'},
             {name: 'slope', type: 'u64'},
             {name: 'totalSupply', type: 'u64'},
-            {name: 'tokenMint', type: 'pubkey'},
+            {name: 'tokenMint', type: 'publicKey'},
             {name: 'bump', type: 'u8'}
           ]
         };
@@ -527,6 +617,11 @@ export const initializeBondingCurve = async (wallet, initialPrice, slope, custom
             const newFields = [];
             
             account.type.fields.forEach(field => {
+              // Fix pubkey types
+              if (field.type === 'pubkey') {
+                field.type = 'publicKey';
+              }
+              
               if (field.name.includes('_')) {
                 // Add camelCase version of the field
                 const parts = field.name.split('_');
@@ -537,6 +632,19 @@ export const initializeBondingCurve = async (wallet, initialPrice, slope, custom
             
             // Append new fields to existing ones
             account.type.fields.push(...newFields);
+          }
+        });
+      }
+      
+      // Fix types array if it exists
+      if (idl.types && Array.isArray(idl.types)) {
+        idl.types.forEach(type => {
+          if (type.type && type.type.fields && Array.isArray(type.type.fields)) {
+            type.type.fields.forEach(field => {
+              if (field.type === 'pubkey') {
+                field.type = 'publicKey';
+              }
+            });
           }
         });
       }
