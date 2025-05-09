@@ -75,6 +75,60 @@ export const getUserCreatedTokens = (walletAddress) => {
 // Initialize connection
 const connection = new Connection('https://api.devnet.solana.com', 'confirmed');
 
+// Add IDL validation function to fix common issues
+const validateAndFixIdl = (idlData) => {
+  // Create a working copy of the IDL
+  const fixedIdl = JSON.parse(JSON.stringify(idlData));
+  
+  // Check and fix account types if needed
+  if (fixedIdl.accounts && Array.isArray(fixedIdl.accounts)) {
+    for (let i = 0; i < fixedIdl.accounts.length; i++) {
+      const account = fixedIdl.accounts[i];
+      // If account doesn't have a type field, add one
+      if (!account.type) {
+        console.log(`Adding missing type field to account ${account.name}`);
+        // Add a default struct type with the account's fields
+        fixedIdl.accounts[i].type = {
+          kind: "struct",
+          fields: []
+        };
+      }
+    }
+  }
+  
+  // Check types array exists
+  if (!fixedIdl.types) {
+    console.log('Adding missing types array to IDL');
+    fixedIdl.types = [];
+  }
+  
+  // Make sure BondingCurve type exists in types for account reference
+  const hasBondingCurveType = fixedIdl.types.some(t => t.name === 'BondingCurve');
+  if (!hasBondingCurveType) {
+    console.log('Adding missing BondingCurve type to IDL');
+    fixedIdl.types.push({
+      name: "BondingCurve",
+      type: {
+        kind: "struct",
+        fields: [
+          { name: "authority", type: "pubkey" },
+          { name: "initial_price", type: "u64" },
+          { name: "slope", type: "u64" },
+          { name: "total_supply", type: "u64" },
+          { name: "token_mint", type: "pubkey" },
+          { name: "bump", type: "u8" }
+        ]
+      }
+    });
+  }
+  
+  return fixedIdl;
+};
+
+// Apply IDL fixes to the imported IDL
+const fixedIdl = validateAndFixIdl(idl);
+console.log('Using fixed IDL structure');
+
 // Create a custom hook for Anchor initialization
 export const useAnchorProgram = () => {
   const [program, setProgram] = useState(null);
@@ -99,13 +153,31 @@ export const useAnchorProgram = () => {
             AnchorProvider.defaultOptions()
           );
           
-          const program = new Program(idl, PROGRAM_ID, provider);
-          console.log('Program from anchorClient:', program);
+          // Check idl structure before creating program
+          console.log('IDL structure check:', {
+            address: fixedIdl.address,
+            metadata: fixedIdl.metadata,
+            hasInstructions: !!fixedIdl.instructions,
+            instructionsCount: fixedIdl.instructions?.length
+          });
+          
+          // Create program with a try/catch to identify specific errors
+          let anchorProgram;
+          try {
+            anchorProgram = new Program(fixedIdl, PROGRAM_ID, provider);
+            console.log('Program created successfully');
+          } catch (progError) {
+            console.error('Error creating program:', progError);
+            // Continue without throwing to avoid breaking the app completely
+            return;
+          }
+          
+          console.log('Program from anchorClient:', anchorProgram);
 
           // Get the bonding curve PDA
           const [bondingCurveAddress] = await PublicKey.findProgramAddress(
             [BONDING_CURVE_SEED, TOKEN_MINT.toBuffer()],
-            program.programId
+            PROGRAM_ID
           );
           
           // Get or create associated token account
@@ -116,7 +188,7 @@ export const useAnchorProgram = () => {
           console.log('Token account from anchorClient:', tokenAccount);
 
           setProvider(provider);
-          setProgram(program);
+          setProgram(anchorProgram);
           setUserTokenAccount(tokenAccount);
           setBondingCurvePDA(bondingCurveAddress);
         }
@@ -289,7 +361,7 @@ export const initializeBondingCurve = async (wallet, initialPrice, slope, custom
     );
     
     // Create the program
-    const program = new Program(idl, PROGRAM_ID, provider);
+    const program = new Program(fixedIdl, PROGRAM_ID, provider);
     console.log('Program created:', program.programId.toString());
     
     // Ensure tokenMint is a PublicKey
@@ -482,30 +554,96 @@ export const checkBondingCurveInitialized = async () => {
   try {
     const connection = new Connection('https://api.devnet.solana.com', 'confirmed');
     
-    // Use the hardcoded PDA that matches what the program expects
-    const expectedPDA = new PublicKey('4BuwHFYtXZo7xtZW5rp4NrQLwCGUfTxkvhuqpJnbstWd');
+    // Derive PDA following the same pattern as in other functions 
+    const [expectedPDA] = await PublicKey.findProgramAddress(
+      [BONDING_CURVE_SEED, TOKEN_MINT.toBuffer()],
+      PROGRAM_ID
+    );
+    
     console.log('Checking bonding curve PDA:', expectedPDA.toString());
     
-    // Check if the account exists
-    const accountInfo = await connection.getAccountInfo(expectedPDA);
+    // Cache to avoid constant requests in development
+    const CACHE_KEY = 'bondingCurveStatus';
     
-    if (!accountInfo) {
-      return {
-        initialized: false,
-        address: expectedPDA.toString(),
-        explorerUrl: getExplorerUrl(expectedPDA.toString())
-      };
+    // Check if we should skip the network check
+    if (typeof window !== 'undefined') {
+      const cachedData = localStorage.getItem(CACHE_KEY);
+      
+      if (cachedData) {
+        const { status, timestamp, address } = JSON.parse(cachedData);
+        
+        // Cache is valid for 30 seconds
+        if (Date.now() - timestamp < 30000 && address === expectedPDA.toString()) {
+          console.log('Using cached bonding curve status');
+          return {
+            initialized: status,
+            address: expectedPDA.toString(),
+            explorerUrl: getExplorerUrl(expectedPDA.toString())
+          };
+        }
+      }
+    }
+    
+    // Check if the account exists with better error handling
+    let accountInfo = null;
+    let error = null;
+    
+    try {
+      // First, check if RPC is responsive
+      await connection.getLatestBlockhash();
+      
+      // Then check account info
+      accountInfo = await connection.getAccountInfo(expectedPDA);
+    } catch (e) {
+      console.error('Error checking account info:', e);
+      error = e.message;
+      
+      // If it's a blockhash error, try with a new connection
+      if (e.message.includes('Blockhash not found')) {
+        try {
+          // Create a new connection with different commitment level
+          const newConnection = new Connection('https://api.devnet.solana.com', 'processed');
+          accountInfo = await newConnection.getAccountInfo(expectedPDA);
+          error = null; // Reset error if successful
+        } catch (retryError) {
+          console.error('Retry error:', retryError);
+          error = `Failed after retry: ${retryError.message}`;
+        }
+      }
+    }
+    
+    const status = accountInfo !== null;
+    
+    // Store in cache
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(CACHE_KEY, JSON.stringify({
+        status,
+        timestamp: Date.now(),
+        address: expectedPDA.toString()
+      }));
     }
     
     // Account exists, return info
     return {
-      initialized: true,
+      initialized: status,
       address: expectedPDA.toString(),
-      explorerUrl: getExplorerUrl(expectedPDA.toString())
+      explorerUrl: getExplorerUrl(expectedPDA.toString()),
+      error: error // Include any error message for debugging
     };
   } catch (error) {
     console.error('Error checking bonding curve:', error);
-    return { initialized: false, error: error.message };
+    // Return a detailed error object but still maintain functionality
+    return { 
+      initialized: false, 
+      error: error.message,
+      diagnosticInfo: {
+        errorType: error.name,
+        fullMessage: error.message,
+        stack: error.stack?.slice(0, 100) // Include part of stack trace
+      },
+      address: "4BuwHFYtXZo7xtZW5rp4NrQLwCGUfTxkvhuqpJnbstWd",
+      explorerUrl: getExplorerUrl("4BuwHFYtXZo7xtZW5rp4NrQLwCGUfTxkvhuqpJnbstWd") 
+    };
   }
 };
 
@@ -520,7 +658,7 @@ export const updateBondingCurveParameters = async (wallet, initialPrice, slope, 
       AnchorProvider.defaultOptions()
     );
     
-    const program = new Program(idl, PROGRAM_ID, provider);
+    const program = new Program(fixedIdl, PROGRAM_ID, provider);
     
     // Get PDA for bonding curve
     const [bondingCurvePDA] = await PublicKey.findProgramAddress(

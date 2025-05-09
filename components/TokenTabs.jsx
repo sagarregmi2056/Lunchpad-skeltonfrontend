@@ -41,7 +41,7 @@ const TABS = [
 ];
 
 const TokenTabs = () => {
-    const [activeTab, setActiveTab] = useState('buy');
+    const [activeTab, setActiveTab] = useState('create');
     const [mounted, setMounted] = useState(false);
 
     // Handle Next.js hydration

@@ -72,7 +72,18 @@ const PoolInfo = () => {
                 setError(null);
             } catch (err) {
                 console.error('Error fetching pool info:', err);
-                setError('Failed to load pool information. The bonding curve might not be initialized yet.');
+                // Provide more detailed error message
+                let errorMessage = 'Failed to load pool information. ';
+
+                if (err.message.includes('Blockhash not found')) {
+                    errorMessage += 'Transaction simulation failed: Blockhash not found. This is likely a temporary RPC connection issue.';
+                } else if (err.message.includes('Account does not exist')) {
+                    errorMessage += 'The bonding curve might not be initialized yet.';
+                } else {
+                    errorMessage += err.message || 'Unknown error occurred.';
+                }
+
+                setError(errorMessage);
                 setPoolData(null);
             } finally {
                 setLoading(false);
@@ -85,6 +96,75 @@ const PoolInfo = () => {
         const intervalId = setInterval(fetchPoolInfo, 30000);
         return () => clearInterval(intervalId);
     }, []);
+
+    // Add function to manually retry
+    const handleRetry = () => {
+        setLoading(true);
+        setError(null);
+        // Re-run the fetch function
+        const fetchPoolInfoRetry = async () => {
+            try {
+                // Find the PDA for the bonding curve - using token mint in seeds
+                const [pda] = await PublicKey.findProgramAddress(
+                    [BONDING_CURVE_SEED, TOKEN_MINT.toBuffer()],
+                    PROGRAM_ID
+                );
+
+                setBondingCurvePDA(pda);
+                console.log('Retry - Bonding curve PDA:', pda.toString());
+
+                // Create a connection with a different commitment level for retry
+                const retryConnection = new Connection('https://api.devnet.solana.com', 'processed');
+
+                // Create a connection for read-only operations
+                const provider = {
+                    connection: retryConnection,
+                    publicKey: PublicKey.default,
+                };
+
+                // Create program instance with retry connection
+                const program = new Program(idl, PROGRAM_ID, provider);
+
+                // Fetch the bonding curve account data with better error handling
+                console.log('Retry - Fetching bonding curve account data...');
+                const bondingCurveAccount = await program.account.bondingCurve.fetch(pda);
+
+                if (!bondingCurveAccount) {
+                    throw new Error('Bonding curve account not found');
+                }
+
+                // Process data as before
+                const initialPriceBN = bondingCurveAccount.initialPrice.toString();
+                const slopeBN = bondingCurveAccount.slope.toString();
+                const totalSupplyBN = bondingCurveAccount.totalSupply.toString();
+
+                const formattedData = {
+                    initialPrice: parseFloat(initialPriceBN) / LAMPORTS_PER_SOL,
+                    slope: parseFloat(slopeBN) / LAMPORTS_PER_SOL,
+                    supply: parseFloat(totalSupplyBN) / 1e9,
+                    initialPriceBN,
+                    slopeBN,
+                    supplyBN: totalSupplyBN,
+                    authority: bondingCurveAccount.authority.toString(),
+                    tokenMint: bondingCurveAccount.tokenMint.toString(),
+                    bondingCurvePDA: pda.toString()
+                };
+
+                console.log('Retry - Formatted pool data:', formattedData);
+                setPoolData(formattedData);
+                setError(null);
+            } catch (err) {
+                console.error('Error in retry fetch:', err);
+                // Set more specific error message
+                setError(`Retry failed: ${err.message || 'Unknown error'}`);
+                setPoolData(null);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchPoolInfoRetry();
+    };
 
     const calculateCurrentPrice = () => {
         if (!poolData) return 0;
@@ -110,9 +190,18 @@ const PoolInfo = () => {
                 </div>
             ) : error ? (
                 <div className="bg-red-900/30 border border-red-700/50 p-4 rounded-lg shadow-lg">
-                    <div className="flex items-center">
+                    <div className="flex items-center mb-3">
                         <IconInfo className="h-5 w-5 mr-2 text-red-400" />
                         <p className="text-sm font-medium text-red-300">{error}</p>
+                    </div>
+                    <div className="flex justify-between items-center mt-3">
+                        <p className="text-xs text-red-400">You can either initialize the bonding curve first or try again later.</p>
+                        <button
+                            onClick={handleRetry}
+                            className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white py-1.5 px-3 rounded-md text-sm shadow-lg hover:shadow-purple-700/20 transition"
+                        >
+                            Retry
+                        </button>
                     </div>
                 </div>
             ) : poolData ? (

@@ -167,7 +167,7 @@ export const createTokenWithMetadata = async (
         transaction.feePayer = walletPubkey;
         
         // Get the latest blockhash
-        const { blockhash } = await connection.getLatestBlockhash();
+        const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
         transaction.recentBlockhash = blockhash;
         
         // Add all instructions to the transaction
@@ -183,9 +183,47 @@ export const createTokenWithMetadata = async (
         // Get the transaction signed by the wallet
         const signedTx = await wallet.signTransaction(transaction);
 
-        // Send and confirm transaction
-        const signature = await connection.sendRawTransaction(signedTx.serialize());
-        await connection.confirmTransaction(signature, 'confirmed');
+        // Send and confirm transaction with retry logic
+        let signature;
+        try {
+            signature = await connection.sendRawTransaction(signedTx.serialize(), {
+                skipPreflight: false,
+                preflightCommitment: 'confirmed',
+                maxRetries: 5
+            });
+            
+            // Wait for confirmation with specific parameters
+            await connection.confirmTransaction({
+                signature,
+                blockhash,
+                lastValidBlockHeight
+            }, 'confirmed');
+        } catch (error) {
+            console.error('Transaction error:', error);
+            if (error.message.includes('Blockhash not found')) {
+                // If blockhash error, retry with a new blockhash
+                const { blockhash: newBlockhash, lastValidBlockHeight: newHeight } = 
+                    await connection.getLatestBlockhash();
+                transaction.recentBlockhash = newBlockhash;
+                transaction.signatures = [];
+                transaction.partialSign(mintKeypair);
+                
+                const newSignedTx = await wallet.signTransaction(transaction);
+                signature = await connection.sendRawTransaction(newSignedTx.serialize(), {
+                    skipPreflight: false,
+                    preflightCommitment: 'confirmed',
+                    maxRetries: 5
+                });
+                
+                await connection.confirmTransaction({
+                    signature,
+                    blockhash: newBlockhash,
+                    lastValidBlockHeight: newHeight
+                }, 'confirmed');
+            } else {
+                throw error;
+            }
+        }
 
         return {
             mint: mintPubkey.toBase58(),
