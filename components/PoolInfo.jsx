@@ -225,7 +225,7 @@ const PoolInfo = () => {
                 setPoolData(formattedData);
                 setError(null);
 
-                // Fetch token metadata 
+                // Fetch token metadata from the blockchain using Metaplex
                 const metadata = await fetchTokenMetadata(formattedData.tokenMint);
                 setTokenMetadata(metadata);
                 console.log('Token metadata:', metadata);
@@ -318,7 +318,7 @@ const PoolInfo = () => {
                     setPoolData(formattedData);
                     setError(null);
 
-                    // Fetch token metadata 
+                    // Fetch token metadata from the blockchain using Metaplex
                     const metadata = await fetchTokenMetadata(formattedData.tokenMint);
                     setTokenMetadata(metadata);
                 } catch (fetchError) {
@@ -358,37 +358,95 @@ const PoolInfo = () => {
         setTimeout(() => setCopySuccess(''), 2000);
     };
 
-    // Function to fetch token metadata
+    // Function to fetch token metadata from the blockchain using Metaplex
     const fetchTokenMetadata = async (tokenMint) => {
         try {
-            // If you're using the SPL token metadata program, replace this with actual metadata fetching
-            // For now, we'll check if the token is in localStorage
-            if (typeof window !== 'undefined') {
-                const tokens = localStorage.getItem('userCreatedTokens') || '{}';
-                const parsedTokens = JSON.parse(tokens);
+            // Use Metaplex to fetch token metadata from the blockchain
+            const mintPubkey = new PublicKey(tokenMint);
 
-                // Look through all wallet's tokens to find a match
-                for (const walletAddress in parsedTokens) {
-                    const tokenList = parsedTokens[walletAddress];
-                    const foundToken = tokenList.find(t => t.mint === tokenMint);
-                    if (foundToken) {
-                        return {
-                            name: foundToken.name || 'Unknown',
-                            symbol: foundToken.symbol || 'UNKNOWN',
-                            decimals: foundToken.decimals || 9
-                        };
-                    }
-                }
+            // Find the metadata PDA for this mint
+            const [metadataPDA] = await PublicKey.findProgramAddress(
+                [
+                    Buffer.from('metadata'),
+                    new PublicKey('metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s').toBuffer(),
+                    mintPubkey.toBuffer(),
+                ],
+                new PublicKey('metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s')
+            );
+
+            console.log('Metadata PDA:', metadataPDA.toString());
+
+            // Fetch the account data
+            const metadataAccount = await connection.getAccountInfo(metadataPDA);
+
+            if (!metadataAccount) {
+                console.log('No metadata found for this token');
+                return {
+                    name: 'Pool Token',
+                    symbol: 'TOKEN',
+                    decimals: 9
+                };
             }
 
-            // If no metadata found, return placeholder values
+            // Deserialize the metadata account data
+            // The first byte is a version number, then comes the data
+            // Skip first 1 byte for versioning
+            const data = metadataAccount.data.slice(1);
+
+            // Extract name and symbol from the data
+            // Format defined by the Metaplex token metadata program
+            // https://github.com/metaplex-foundation/metaplex-program-library/blob/master/token-metadata/program/src/state.rs
+
+            // Name length is a u32 (4 bytes)
+            const nameLength = data.slice(0, 4).readUInt32LE(0);
+
+            // Name is UTF-8 encoded string of nameLength
+            const name = new TextDecoder().decode(data.slice(4, 4 + nameLength)).replace(/\0/g, '');
+
+            // Symbol length is a u32 (4 bytes) after the name
+            const symbolLengthStart = 4 + nameLength;
+            const symbolLength = data.slice(symbolLengthStart, symbolLengthStart + 4).readUInt32LE(0);
+
+            // Symbol is UTF-8 encoded string of symbolLength
+            const symbol = new TextDecoder().decode(
+                data.slice(symbolLengthStart + 4, symbolLengthStart + 4 + symbolLength)
+            ).replace(/\0/g, '');
+
+            console.log('Token metadata from blockchain:', { name, symbol });
+
+            // Return the fetched metadata
             return {
-                name: 'Pool Token',
-                symbol: 'TOKEN',
-                decimals: 9
+                name: name || 'Unknown',
+                symbol: symbol || 'UNKNOWN',
+                decimals: 9 // We could fetch this from the token mint account if needed
             };
         } catch (error) {
-            console.error('Error fetching token metadata:', error);
+            console.error('Error fetching token metadata from blockchain:', error);
+
+            // Fallback to localStorage as backup
+            try {
+                if (typeof window !== 'undefined') {
+                    const tokens = localStorage.getItem('userCreatedTokens') || '{}';
+                    const parsedTokens = JSON.parse(tokens);
+
+                    // Look through all wallet's tokens to find a match
+                    for (const walletAddress in parsedTokens) {
+                        const tokenList = parsedTokens[walletAddress];
+                        const foundToken = tokenList.find(t => t.mint === tokenMint);
+                        if (foundToken) {
+                            return {
+                                name: foundToken.name || 'Unknown',
+                                symbol: foundToken.symbol || 'UNKNOWN',
+                                decimals: foundToken.decimals || 9
+                            };
+                        }
+                    }
+                }
+            } catch (localStorageError) {
+                console.error('Error fetching from localStorage:', localStorageError);
+            }
+
+            // Return default values if both methods fail
             return {
                 name: 'Pool Token',
                 symbol: 'TOKEN',
