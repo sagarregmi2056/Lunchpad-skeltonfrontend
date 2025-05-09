@@ -203,9 +203,9 @@ const PoolInfo = () => {
 
                 // Safely convert BN to number (avoiding toNumber() which can overflow)
                 // Using string conversion and parsing with decimal representation
-                const initialPriceBN = bondingCurveAccount.initialPrice.toString();
-                const slopeBN = bondingCurveAccount.slope.toString();
-                const totalSupplyBN = bondingCurveAccount.totalSupply.toString();
+                const initialPriceBN = bondingCurveAccount?.initialPrice?.toString() || "0";
+                const slopeBN = bondingCurveAccount?.slope?.toString() || "0";
+                const totalSupplyBN = bondingCurveAccount?.totalSupply?.toString() || "0";
 
                 // Format the data for display, using string operations for safety
                 const formattedData = {
@@ -215,8 +215,8 @@ const PoolInfo = () => {
                     initialPriceBN,
                     slopeBN,
                     supplyBN: totalSupplyBN,
-                    authority: bondingCurveAccount.authority.toString(),
-                    tokenMint: bondingCurveAccount.tokenMint.toString(),
+                    authority: bondingCurveAccount?.authority?.toString() || "",
+                    tokenMint: bondingCurveAccount?.tokenMint?.toString() || "",
                     bondingCurvePDA: pda.toString()
                 };
 
@@ -292,9 +292,9 @@ const PoolInfo = () => {
                     }
 
                     // Process data as before
-                    const initialPriceBN = bondingCurveAccount.initialPrice.toString();
-                    const slopeBN = bondingCurveAccount.slope.toString();
-                    const totalSupplyBN = bondingCurveAccount.totalSupply.toString();
+                    const initialPriceBN = bondingCurveAccount?.initialPrice?.toString() || "0";
+                    const slopeBN = bondingCurveAccount?.slope?.toString() || "0";
+                    const totalSupplyBN = bondingCurveAccount?.totalSupply?.toString() || "0";
 
                     const formattedData = {
                         initialPrice: parseFloat(initialPriceBN) / LAMPORTS_PER_SOL,
@@ -303,8 +303,8 @@ const PoolInfo = () => {
                         initialPriceBN,
                         slopeBN,
                         supplyBN: totalSupplyBN,
-                        authority: bondingCurveAccount.authority.toString(),
-                        tokenMint: bondingCurveAccount.tokenMint.toString(),
+                        authority: bondingCurveAccount?.authority?.toString() || "",
+                        tokenMint: bondingCurveAccount?.tokenMint?.toString() || "",
                         bondingCurvePDA: pda.toString()
                     };
 

@@ -59,9 +59,10 @@ const BuyTokens = () => {
                 }
 
                 // Safely handle large numbers by using toString instead of toNumber
-                const initialPriceBN = bondingCurveAccount.initialPrice?.toString() || "0";
-                const slopeBN = bondingCurveAccount.slope?.toString() || "0";
-                const totalSupplyBN = bondingCurveAccount.totalSupply?.toString() || "0";
+                // Also add null/undefined checks for each property
+                const initialPriceBN = bondingCurveAccount?.initialPrice?.toString() || "0";
+                const slopeBN = bondingCurveAccount?.slope?.toString() || "0";
+                const totalSupplyBN = bondingCurveAccount?.totalSupply?.toString() || "0";
 
                 // Calculate the current price - convert strings to numbers safely
                 const initialPrice = parseFloat(initialPriceBN) / LAMPORTS_PER_SOL;

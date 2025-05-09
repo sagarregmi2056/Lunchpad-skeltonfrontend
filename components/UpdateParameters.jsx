@@ -32,15 +32,15 @@ const UpdateParameters = () => {
                 const bondingCurveAccount = await program.account.bondingCurve.fetch(bondingCurvePDA);
 
                 const params = {
-                    initialPrice: (bondingCurveAccount.initialPrice.toString() / LAMPORTS_PER_SOL).toFixed(8),
-                    slope: (bondingCurveAccount.slope.toString() / LAMPORTS_PER_SOL).toFixed(8),
-                    totalSupply: (bondingCurveAccount.totalSupply.toString() / 1e9),
-                    authority: bondingCurveAccount.authority.toString()
+                    initialPrice: (bondingCurveAccount?.initialPrice?.toString() || "0") / LAMPORTS_PER_SOL,
+                    slope: (bondingCurveAccount?.slope?.toString() || "0") / LAMPORTS_PER_SOL,
+                    totalSupply: (bondingCurveAccount?.totalSupply?.toString() || "0") / 1e9,
+                    authority: bondingCurveAccount?.authority?.toString() || ""
                 };
 
                 setCurrentParams(params);
-                setInitialPrice(params.initialPrice);
-                setSlope(params.slope);
+                setInitialPrice(params.initialPrice.toFixed(8));
+                setSlope(params.slope.toFixed(8));
             } catch (error) {
                 console.error('Error fetching bonding curve parameters:', error);
                 setStatus(`Error fetching parameters: ${error.message}`);
@@ -163,11 +163,11 @@ const UpdateParameters = () => {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-purple-800/30 pt-4">
                                 <div className="bg-purple-900/10 rounded-lg p-3 border border-purple-800/20">
                                     <div className="text-xs text-purple-400 mb-1">Initial Price</div>
-                                    <div className="text-lg font-semibold text-white">{currentParams.initialPrice} SOL</div>
+                                    <div className="text-lg font-semibold text-white">{currentParams.initialPrice.toFixed(8)} SOL</div>
                                 </div>
                                 <div className="bg-purple-900/10 rounded-lg p-3 border border-purple-800/20">
                                     <div className="text-xs text-purple-400 mb-1">Price Slope</div>
-                                    <div className="text-lg font-semibold text-white">{currentParams.slope} SOL</div>
+                                    <div className="text-lg font-semibold text-white">{currentParams.slope.toFixed(8)} SOL</div>
                                 </div>
                                 <div className="bg-purple-900/10 rounded-lg p-3 border border-purple-800/20">
                                     <div className="text-xs text-purple-400 mb-1">Total Supply</div>

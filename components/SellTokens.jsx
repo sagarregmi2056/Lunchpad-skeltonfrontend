@@ -41,9 +41,9 @@ const SellTokens = () => {
                 const bondingCurveAccount = await program.account.bondingCurve.fetch(bondingCurvePDA);
 
                 // Safely handle large numbers by using toString instead of toNumber
-                const initialPriceBN = bondingCurveAccount.initialPrice.toString();
-                const slopeBN = bondingCurveAccount.slope.toString();
-                const totalSupplyBN = bondingCurveAccount.totalSupply.toString();
+                const initialPriceBN = bondingCurveAccount?.initialPrice?.toString() || "0";
+                const slopeBN = bondingCurveAccount?.slope?.toString() || "0";
+                const totalSupplyBN = bondingCurveAccount?.totalSupply?.toString() || "0";
 
                 // Calculate the current price - convert strings to numbers safely
                 const initialPrice = parseFloat(initialPriceBN) / LAMPORTS_PER_SOL;
