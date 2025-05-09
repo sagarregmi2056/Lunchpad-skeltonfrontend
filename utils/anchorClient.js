@@ -90,7 +90,7 @@ const validateAndFixIdl = (idlData) => {
         // Add a default struct type with the account's fields
         fixedIdl.accounts[i].type = {
           kind: "struct",
-          fields: []
+          fields: account.fields || [] // Use existing fields if available
         };
       }
     }
@@ -118,6 +118,45 @@ const validateAndFixIdl = (idlData) => {
           { name: "token_mint", type: "pubkey" },
           { name: "bump", type: "u8" }
         ]
+      }
+    });
+  }
+  
+  // Fix instruction parameter types
+  if (fixedIdl.instructions && Array.isArray(fixedIdl.instructions)) {
+    fixedIdl.instructions.forEach(instruction => {
+      if (instruction.args && Array.isArray(instruction.args)) {
+        instruction.args.forEach(arg => {
+          // Convert "vec" types to explicit array types
+          if (typeof arg.type === 'string' && arg.type.startsWith('vec<')) {
+            const innerType = arg.type.substring(4, arg.type.length - 1);
+            arg.type = { 
+              array: [innerType]
+            };
+          }
+          
+          // Ensure all BN/u64/i64 types are properly formatted
+          if (arg.type === 'u64' || arg.type === 'i64') {
+            // These are proper Anchor types already - no changes needed
+          }
+        });
+      }
+    });
+  }
+  
+  // Ensure accounts in each instruction have correct type fields
+  if (fixedIdl.instructions && Array.isArray(fixedIdl.instructions)) {
+    fixedIdl.instructions.forEach(instruction => {
+      if (instruction.accounts && Array.isArray(instruction.accounts)) {
+        instruction.accounts.forEach(account => {
+          // Ensure each account has an isMut and isSigner property
+          if (typeof account.isMut !== 'boolean') {
+            account.isMut = false;
+          }
+          if (typeof account.isSigner !== 'boolean') {
+            account.isSigner = false;
+          }
+        });
       }
     });
   }
@@ -360,8 +399,45 @@ export const initializeBondingCurve = async (wallet, initialPrice, slope, custom
       AnchorProvider.defaultOptions()
     );
     
-    // Create the program
-    const program = new Program(fixedIdl, PROGRAM_ID, provider);
+    // Deep cloning the IDL and making sure it's properly structured before using
+    const deepClonedIdl = JSON.parse(JSON.stringify(fixedIdl));
+    
+    // Add additional IDL validation specifically for bonding curve initialization
+    const enhancedIdl = (() => {
+      const idl = deepClonedIdl;
+      
+      // Find the initialize instruction
+      const initInstruction = idl.instructions.find(i => i.name === 'initialize');
+      if (initInstruction && initInstruction.args) {
+        // Ensure args have the correct types
+        initInstruction.args.forEach(arg => {
+          if (arg.name === 'initialPrice' || arg.name === 'slope') {
+            arg.type = 'u64'; // Ensure these are u64 type
+          }
+        });
+      }
+      
+      // Explicitly define the BondingCurve account structure
+      const bondingCurveAccount = idl.accounts.find(a => a.name === 'BondingCurve');
+      if (bondingCurveAccount) {
+        bondingCurveAccount.type = {
+          kind: 'struct',
+          fields: [
+            {name: 'authority', type: 'pubkey'},
+            {name: 'initial_price', type: 'u64'},
+            {name: 'slope', type: 'u64'},
+            {name: 'total_supply', type: 'u64'},
+            {name: 'token_mint', type: 'pubkey'},
+            {name: 'bump', type: 'u8'}
+          ]
+        };
+      }
+      
+      return idl;
+    })();
+    
+    // Create the program with our enhanced IDL
+    const program = new Program(enhancedIdl, PROGRAM_ID, provider);
     console.log('Program created:', program.programId.toString());
     
     // Ensure tokenMint is a PublicKey
@@ -432,33 +508,20 @@ export const initializeBondingCurve = async (wallet, initialPrice, slope, custom
     console.log('Initial price BN:', initialPriceBN.toString());
     console.log('Slope BN:', slopeBN.toString());
     
-    // Convert BN objects to u64 for Anchor compatibility
-    // The program requires u64 type, which is what BN.toNumber() can represent if within range
-    // Only use numeric values, not BN objects directly in the call
     try {
-      // For Anchor Program methods, we need to ensure the types match the IDL
-      // Use raw BN objects since @project-serum/anchor expects BN for u64 params
-      // Try to use the BN objects directly without any manual conversion
-      
-      // Log detailed type information for debugging
-      console.log('initialPrice type:', typeof initialPriceBN);
-      console.log('slope type:', typeof slopeBN);
-      console.log('initialPrice is BN:', initialPriceBN instanceof BN);
-      console.log('slope is BN:', slopeBN instanceof BN);
-      
-      // Use program.rpc.initialize instead to have more control
-      const tx = await program.rpc.initialize(
-        initialPriceBN,  
-        slopeBN,         
-        {
-          accounts: {
-            bondingCurve: bondingCurveAddress,
-            authority: walletPubkey,
-            tokenMint: tokenMintToUse,
-            systemProgram: SystemProgram.programId
-          }
-        }
-      );
+      // Use methods.initialize to avoid type issues
+      const tx = await program.methods
+        .initialize(
+          initialPriceBN,
+          slopeBN
+        )
+        .accounts({
+          bondingCurve: bondingCurveAddress,
+          authority: walletPubkey,
+          tokenMint: tokenMintToUse,
+          systemProgram: SystemProgram.programId
+        })
+        .rpc();
       
       console.log('Initialize transaction sent:', tx);
       

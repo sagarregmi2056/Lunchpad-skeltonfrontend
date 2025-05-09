@@ -112,10 +112,26 @@ const CreateToken = () => {
                         setInitialPrice('1');
                         setSlope('0.1');
                     } else {
-                        throw new Error(curveResult.error || "Failed to initialize bonding curve");
+                        // More specific error handling based on error message type
+                        if (curveResult.error && curveResult.error.includes('vec')) {
+                            // If it's a type error with 'vec', provide a more helpful message
+                            setStatus(`Token created with address ${mintAddress}, but bonding curve initialization failed due to a type mismatch. Please try again with the Initialize tab.`);
+                        } else if (curveResult.error && curveResult.error.includes('t.type is undefined')) {
+                            // If it's the IDL type error
+                            setStatus(`Token created with address ${mintAddress}, but bonding curve initialization had an IDL validation error. Please try initializing separately.`);
+                        } else {
+                            throw new Error(curveResult.error || "Failed to initialize bonding curve");
+                        }
                     }
                 } catch (error) {
-                    setStatus(`Token created with address ${mintAddress}, but bonding curve failed: ${error.message}`);
+                    console.error('Error initializing bonding curve:', error);
+                    // Provide more context and next steps in the error message
+                    setStatus(`Token created with address ${mintAddress}, but bonding curve failed: ${error.message}. You can still use your token, and initialize the bonding curve later.`);
+
+                    // Log detailed error for debugging
+                    if (error.logs) {
+                        console.error('Transaction logs:', error.logs);
+                    }
                 }
             } else {
                 throw new Error(result.error);

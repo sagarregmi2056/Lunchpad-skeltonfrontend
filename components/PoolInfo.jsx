@@ -9,6 +9,69 @@ import CurveVisualization from './CurveVisualization';
 const connection = new Connection('https://api.devnet.solana.com', 'confirmed');
 const BONDING_CURVE_SEED = Buffer.from('bonding_curve');
 
+// Helper function to fix IDL for program instantiation
+const prepareIdl = (originalIdl) => {
+    // Deep clone to avoid modifying the original
+    const fixedIdl = JSON.parse(JSON.stringify(originalIdl));
+
+    // Ensure BondingCurve account has proper type
+    const bondingCurveAccount = fixedIdl.accounts.find(a => a.name === 'BondingCurve');
+    if (bondingCurveAccount) {
+        bondingCurveAccount.type = {
+            kind: 'struct',
+            fields: [
+                { name: 'authority', type: 'pubkey' },
+                { name: 'initial_price', type: 'u64' },
+                { name: 'slope', type: 'u64' },
+                { name: 'total_supply', type: 'u64' },
+                { name: 'token_mint', type: 'pubkey' },
+                { name: 'bump', type: 'u8' }
+            ]
+        };
+    }
+
+    // Fix instruction arg types
+    if (fixedIdl.instructions) {
+        fixedIdl.instructions.forEach(instruction => {
+            if (instruction.args) {
+                instruction.args.forEach(arg => {
+                    // Ensure u64 types are properly set
+                    if (arg.name === 'initialPrice' || arg.name === 'slope') {
+                        arg.type = 'u64';
+                    }
+                });
+            }
+        });
+    }
+
+    // Ensure types array exists
+    if (!fixedIdl.types) {
+        fixedIdl.types = [];
+    }
+
+    // Add BondingCurve type if not already present
+    const hasBondingCurveType = fixedIdl.types.some(t => t.name === 'BondingCurve');
+    if (!hasBondingCurveType) {
+        fixedIdl.types.push({
+            name: "BondingCurve",
+            type: {
+                kind: "struct",
+                fields: [
+                    { name: "authority", type: "pubkey" },
+                    { name: "initial_price", type: "u64" },
+                    { name: "slope", type: "u64" },
+                    { name: "total_supply", type: "u64" },
+                    { name: "token_mint", type: "pubkey" },
+                    { name: "bump", type: "u8" }
+                ]
+            }
+        });
+    }
+
+    console.log('IDL prepared for Pool Info component');
+    return fixedIdl;
+};
+
 const PoolInfo = () => {
     const [loading, setLoading] = useState(true);
     const [poolData, setPoolData] = useState(null);
@@ -36,8 +99,11 @@ const PoolInfo = () => {
                     publicKey: PublicKey.default,
                 };
 
-                // Create program instance
-                const program = new Program(idl, PROGRAM_ID, provider);
+                // Use prepared IDL to avoid type errors
+                const enhancedIdl = prepareIdl(idl);
+
+                // Create program instance with validated IDL
+                const program = new Program(enhancedIdl, PROGRAM_ID, provider);
 
                 // Fetch the bonding curve account data
                 console.log('Fetching bonding curve account data...');
@@ -122,37 +188,55 @@ const PoolInfo = () => {
                     publicKey: PublicKey.default,
                 };
 
-                // Create program instance with retry connection
-                const program = new Program(idl, PROGRAM_ID, provider);
+                // Use prepared IDL to avoid type errors
+                const enhancedIdl = prepareIdl(idl);
+
+                // Create program instance with properly prepared IDL
+                const program = new Program(enhancedIdl, PROGRAM_ID, provider);
 
                 // Fetch the bonding curve account data with better error handling
                 console.log('Retry - Fetching bonding curve account data...');
-                const bondingCurveAccount = await program.account.bondingCurve.fetch(pda);
 
-                if (!bondingCurveAccount) {
-                    throw new Error('Bonding curve account not found');
+                try {
+                    const bondingCurveAccount = await program.account.bondingCurve.fetch(pda);
+
+                    if (!bondingCurveAccount) {
+                        throw new Error('Bonding curve account not found');
+                    }
+
+                    // Process data as before
+                    const initialPriceBN = bondingCurveAccount.initialPrice.toString();
+                    const slopeBN = bondingCurveAccount.slope.toString();
+                    const totalSupplyBN = bondingCurveAccount.totalSupply.toString();
+
+                    const formattedData = {
+                        initialPrice: parseFloat(initialPriceBN) / LAMPORTS_PER_SOL,
+                        slope: parseFloat(slopeBN) / LAMPORTS_PER_SOL,
+                        supply: parseFloat(totalSupplyBN) / 1e9,
+                        initialPriceBN,
+                        slopeBN,
+                        supplyBN: totalSupplyBN,
+                        authority: bondingCurveAccount.authority.toString(),
+                        tokenMint: bondingCurveAccount.tokenMint.toString(),
+                        bondingCurvePDA: pda.toString()
+                    };
+
+                    console.log('Retry - Formatted pool data:', formattedData);
+                    setPoolData(formattedData);
+                    setError(null);
+                } catch (fetchError) {
+                    console.error('Error fetching account data:', fetchError);
+
+                    // Check if the account exists using getAccountInfo directly
+                    const accountInfo = await retryConnection.getAccountInfo(pda);
+
+                    if (!accountInfo) {
+                        throw new Error('Bonding curve not initialized. The account does not exist.');
+                    } else {
+                        throw new Error(`Account exists but could not be deserialized: ${fetchError.message}`);
+                    }
                 }
 
-                // Process data as before
-                const initialPriceBN = bondingCurveAccount.initialPrice.toString();
-                const slopeBN = bondingCurveAccount.slope.toString();
-                const totalSupplyBN = bondingCurveAccount.totalSupply.toString();
-
-                const formattedData = {
-                    initialPrice: parseFloat(initialPriceBN) / LAMPORTS_PER_SOL,
-                    slope: parseFloat(slopeBN) / LAMPORTS_PER_SOL,
-                    supply: parseFloat(totalSupplyBN) / 1e9,
-                    initialPriceBN,
-                    slopeBN,
-                    supplyBN: totalSupplyBN,
-                    authority: bondingCurveAccount.authority.toString(),
-                    tokenMint: bondingCurveAccount.tokenMint.toString(),
-                    bondingCurvePDA: pda.toString()
-                };
-
-                console.log('Retry - Formatted pool data:', formattedData);
-                setPoolData(formattedData);
-                setError(null);
             } catch (err) {
                 console.error('Error in retry fetch:', err);
                 // Set more specific error message
