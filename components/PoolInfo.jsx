@@ -165,6 +165,7 @@ const PoolInfo = () => {
     const [error, setError] = useState(null);
     const [copySuccess, setCopySuccess] = useState('');
     const [bondingCurvePDA, setBondingCurvePDA] = useState(null);
+    const [tokenMetadata, setTokenMetadata] = useState(null);
 
     useEffect(() => {
         const fetchPoolInfo = async () => {
@@ -223,6 +224,11 @@ const PoolInfo = () => {
                 console.log('Formatted pool data:', formattedData);
                 setPoolData(formattedData);
                 setError(null);
+
+                // Fetch token metadata 
+                const metadata = await fetchTokenMetadata(formattedData.tokenMint);
+                setTokenMetadata(metadata);
+                console.log('Token metadata:', metadata);
             } catch (err) {
                 console.error('Error fetching pool info:', err);
                 // Provide more detailed error message
@@ -311,6 +317,10 @@ const PoolInfo = () => {
                     console.log('Retry - Formatted pool data:', formattedData);
                     setPoolData(formattedData);
                     setError(null);
+
+                    // Fetch token metadata 
+                    const metadata = await fetchTokenMetadata(formattedData.tokenMint);
+                    setTokenMetadata(metadata);
                 } catch (fetchError) {
                     console.error('Error fetching account data:', fetchError);
 
@@ -346,6 +356,45 @@ const PoolInfo = () => {
         navigator.clipboard.writeText(text);
         setCopySuccess(`${type} copied!`);
         setTimeout(() => setCopySuccess(''), 2000);
+    };
+
+    // Function to fetch token metadata
+    const fetchTokenMetadata = async (tokenMint) => {
+        try {
+            // If you're using the SPL token metadata program, replace this with actual metadata fetching
+            // For now, we'll check if the token is in localStorage
+            if (typeof window !== 'undefined') {
+                const tokens = localStorage.getItem('userCreatedTokens') || '{}';
+                const parsedTokens = JSON.parse(tokens);
+
+                // Look through all wallet's tokens to find a match
+                for (const walletAddress in parsedTokens) {
+                    const tokenList = parsedTokens[walletAddress];
+                    const foundToken = tokenList.find(t => t.mint === tokenMint);
+                    if (foundToken) {
+                        return {
+                            name: foundToken.name || 'Unknown',
+                            symbol: foundToken.symbol || 'UNKNOWN',
+                            decimals: foundToken.decimals || 9
+                        };
+                    }
+                }
+            }
+
+            // If no metadata found, return placeholder values
+            return {
+                name: 'Pool Token',
+                symbol: 'TOKEN',
+                decimals: 9
+            };
+        } catch (error) {
+            console.error('Error fetching token metadata:', error);
+            return {
+                name: 'Pool Token',
+                symbol: 'TOKEN',
+                decimals: 9
+            };
+        }
     };
 
     return (
@@ -462,6 +511,25 @@ const PoolInfo = () => {
                         </div>
 
                         <div className="p-6 space-y-4">
+                            {/* Token Name and Symbol */}
+                            {tokenMetadata && (
+                                <div className="mb-5 bg-gray-800/40 rounded-lg p-4 border border-gray-700/40">
+                                    <div className="flex items-center justify-between mb-3">
+                                        <div>
+                                            <h4 className="text-sm font-medium text-purple-300">Token Name</h4>
+                                            <p className="text-lg font-bold text-white mt-1">{tokenMetadata.name}</p>
+                                        </div>
+                                        <div className="text-right">
+                                            <h4 className="text-sm font-medium text-purple-300">Symbol</h4>
+                                            <p className="text-lg font-bold text-white mt-1">{tokenMetadata.symbol}</p>
+                                        </div>
+                                    </div>
+                                    <div className="text-xs text-purple-400/70">
+                                        Token metadata retrieved from creation records
+                                    </div>
+                                </div>
+                            )}
+
                             <div className="relative">
                                 {copySuccess === 'Token mint' && (
                                     <div className="absolute right-0 top-0 text-xs text-green-400 bg-green-900/40 px-2 py-1 rounded animate-fade-in-out">
