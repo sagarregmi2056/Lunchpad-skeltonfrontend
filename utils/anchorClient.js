@@ -79,6 +79,36 @@ const connection = new Connection('https://api.devnet.solana.com', 'confirmed');
 const validateAndFixIdl = (idlData) => {
   // Create a working copy of the IDL
   const fixedIdl = JSON.parse(JSON.stringify(idlData));
+
+  // Recursive function to fix all vector types in the IDL structure
+  const fixVectorTypes = (obj) => {
+    if (!obj) return;
+
+    // Handle arrays
+    if (Array.isArray(obj)) {
+      obj.forEach(item => fixVectorTypes(item));
+      return;
+    }
+
+    // Handle objects
+    if (typeof obj === 'object') {
+      Object.keys(obj).forEach(key => {
+        // Check for vec<type> format in string values
+        if (typeof obj[key] === 'string' && obj[key].startsWith('vec<')) {
+          const innerType = obj[key].substring(4, obj[key].length - 1);
+          
+          // Set in both array format and vec format to maximize compatibility
+          obj[key] = { vec: innerType };
+          console.log(`Fixed vector type: ${key} from vec<${innerType}> to vec format`);
+        } else {
+          fixVectorTypes(obj[key]);
+        }
+      });
+    }
+  };
+
+  // Apply vector fixes throughout the entire IDL
+  fixVectorTypes(fixedIdl);
   
   // Check and fix account types if needed
   if (fixedIdl.accounts && Array.isArray(fixedIdl.accounts)) {
@@ -92,6 +122,26 @@ const validateAndFixIdl = (idlData) => {
           kind: "struct",
           fields: account.fields || [] // Use existing fields if available
         };
+      }
+      
+      // Add camelCase aliases for fields if they use snake_case
+      if (account.type && account.type.fields) {
+        const newFields = [];
+        
+        // Check each field for snake_case
+        account.type.fields.forEach(field => {
+          if (field.name && field.name.includes('_')) {
+            // Create camelCase version
+            const parts = field.name.split('_');
+            const camelCaseName = parts[0] + parts.slice(1).map(p => p.charAt(0).toUpperCase() + p.slice(1)).join('');
+            
+            // Create a new field with camelCase name but same type
+            newFields.push({...field, name: camelCaseName});
+          }
+        });
+        
+        // Add the new camelCase fields
+        account.type.fields.push(...newFields);
       }
     }
   }
@@ -112,11 +162,15 @@ const validateAndFixIdl = (idlData) => {
         kind: "struct",
         fields: [
           { name: "authority", type: "pubkey" },
-          { name: "initial_price", type: "u64" },
+          { name: "initialPrice", type: "u64" },
           { name: "slope", type: "u64" },
+          { name: "totalSupply", type: "u64" },
+          { name: "tokenMint", type: "pubkey" },
+          { name: "bump", type: "u8" },
+          // Include snake_case versions as well for compatibility
+          { name: "initial_price", type: "u64" },
           { name: "total_supply", type: "u64" },
-          { name: "token_mint", type: "pubkey" },
-          { name: "bump", type: "u8" }
+          { name: "token_mint", type: "pubkey" }
         ]
       }
     });
@@ -131,13 +185,14 @@ const validateAndFixIdl = (idlData) => {
           if (typeof arg.type === 'string' && arg.type.startsWith('vec<')) {
             const innerType = arg.type.substring(4, arg.type.length - 1);
             arg.type = { 
-              array: [innerType]
+              vec: innerType 
             };
           }
           
           // Ensure all BN/u64/i64 types are properly formatted
-          if (arg.type === 'u64' || arg.type === 'i64') {
-            // These are proper Anchor types already - no changes needed
+          if (arg.name === 'initialPrice' || arg.name === 'initial_price' || 
+              arg.name === 'slope') {
+            arg.type = 'u64';
           }
         });
       }
@@ -161,6 +216,7 @@ const validateAndFixIdl = (idlData) => {
     });
   }
   
+  console.log('IDL successfully validated and fixed');
   return fixedIdl;
 };
 
@@ -411,26 +467,78 @@ export const initializeBondingCurve = async (wallet, initialPrice, slope, custom
       if (initInstruction && initInstruction.args) {
         // Ensure args have the correct types
         initInstruction.args.forEach(arg => {
-          if (arg.name === 'initialPrice' || arg.name === 'slope') {
+          if (arg.name === 'initialPrice' || arg.name === 'initial_price' || arg.name === 'slope') {
             arg.type = 'u64'; // Ensure these are u64 type
           }
         });
       }
       
-      // Explicitly define the BondingCurve account structure
+      // Fix any vector type issues throughout the IDL
+      const fixVectorTypes = (obj) => {
+        if (!obj) return;
+        
+        // Handle arrays
+        if (Array.isArray(obj)) {
+          obj.forEach(item => fixVectorTypes(item));
+          return;
+        }
+        
+        // Handle objects
+        if (typeof obj === 'object') {
+          Object.keys(obj).forEach(key => {
+            // Check for vec<type> format in string values
+            if (typeof obj[key] === 'string' && obj[key].startsWith('vec<')) {
+              const innerType = obj[key].substring(4, obj[key].length - 1);
+              obj[key] = {
+                vec: innerType
+              };
+              console.log(`Fixed vector type: ${key} from vec<${innerType}> to { vec: ${innerType} }`);
+            } else {
+              fixVectorTypes(obj[key]);
+            }
+          });
+        }
+      };
+      
+      // Apply vector type fixes
+      fixVectorTypes(idl);
+      
+      // Explicitly define the BondingCurve account structure - use camelCase here
       const bondingCurveAccount = idl.accounts.find(a => a.name === 'BondingCurve');
       if (bondingCurveAccount) {
         bondingCurveAccount.type = {
           kind: 'struct',
           fields: [
             {name: 'authority', type: 'pubkey'},
-            {name: 'initial_price', type: 'u64'},
+            {name: 'initialPrice', type: 'u64'},
             {name: 'slope', type: 'u64'},
-            {name: 'total_supply', type: 'u64'},
-            {name: 'token_mint', type: 'pubkey'},
+            {name: 'totalSupply', type: 'u64'},
+            {name: 'tokenMint', type: 'pubkey'},
             {name: 'bump', type: 'u8'}
           ]
         };
+      }
+      
+      // Add camelCase aliases alongside snake_case names for maximum compatibility
+      // This addresses inconsistencies in how field names are referenced
+      if (idl.accounts) {
+        idl.accounts.forEach(account => {
+          if (account.type && account.type.fields) {
+            const newFields = [];
+            
+            account.type.fields.forEach(field => {
+              if (field.name.includes('_')) {
+                // Add camelCase version of the field
+                const parts = field.name.split('_');
+                const camelCaseName = parts[0] + parts.slice(1).map(p => p.charAt(0).toUpperCase() + p.slice(1)).join('');
+                newFields.push({...field, name: camelCaseName});
+              }
+            });
+            
+            // Append new fields to existing ones
+            account.type.fields.push(...newFields);
+          }
+        });
       }
       
       return idl;
@@ -510,10 +618,28 @@ export const initializeBondingCurve = async (wallet, initialPrice, slope, custom
     
     try {
       // Use methods.initialize to avoid type issues
+      // Log detailed information about the program instance
+      console.log('Program IDL instructions:', program.idl.instructions.map(i => i.name));
+      
+      // Make sure the initialize method exists
+      if (!program.methods.initialize) {
+        console.error('Initialize method not found on program');
+        return { success: false, error: 'Program method "initialize" not found' };
+      }
+      
+      // Log parameters being passed
+      console.log('Passing parameters to initialize:', {
+        initialPriceBNtype: typeof initialPriceBN,
+        initialPriceBNisNumber: typeof initialPriceBN.toNumber === 'function',
+        slopeBNtype: typeof slopeBN,
+        slopeBNisNumber: typeof slopeBN.toNumber === 'function',
+      });
+      
+      // Try using a direct approach with proper types
       const tx = await program.methods
         .initialize(
-          initialPriceBN,
-          slopeBN
+          initialPriceBN,  // This should be a BN instance
+          slopeBN          // This should be a BN instance
         )
         .accounts({
           bondingCurve: bondingCurveAddress,
@@ -521,7 +647,11 @@ export const initializeBondingCurve = async (wallet, initialPrice, slope, custom
           tokenMint: tokenMintToUse,
           systemProgram: SystemProgram.programId
         })
-        .rpc();
+        .signers([])  // Add empty signers array explicitly
+        .rpc({
+          commitment: 'confirmed',
+          skipPreflight: false, // Enable preflight to catch errors before submitting
+        });
       
       console.log('Initialize transaction sent:', tx);
       

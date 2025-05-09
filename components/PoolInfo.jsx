@@ -14,6 +14,36 @@ const prepareIdl = (originalIdl) => {
     // Deep clone to avoid modifying the original
     const fixedIdl = JSON.parse(JSON.stringify(originalIdl));
 
+    // Fix vector type issues by recursively checking all type definitions
+    const fixVectorTypes = (obj) => {
+        if (!obj) return;
+
+        // Handle arrays
+        if (Array.isArray(obj)) {
+            obj.forEach(item => fixVectorTypes(item));
+            return;
+        }
+
+        // Handle objects
+        if (typeof obj === 'object') {
+            Object.keys(obj).forEach(key => {
+                // Check for vec<type> format in string values
+                if (typeof obj[key] === 'string' && obj[key].startsWith('vec<')) {
+                    const innerType = obj[key].substring(4, obj[key].length - 1);
+                    obj[key] = {
+                        vec: innerType
+                    };
+                    console.log(`Fixed vector type: ${key} from vec<${innerType}> to proper format`);
+                } else {
+                    fixVectorTypes(obj[key]);
+                }
+            });
+        }
+    };
+
+    // Apply vector type fixes to the entire IDL
+    fixVectorTypes(fixedIdl);
+
     // Ensure BondingCurve account has proper type
     const bondingCurveAccount = fixedIdl.accounts.find(a => a.name === 'BondingCurve');
     if (bondingCurveAccount) {
@@ -21,13 +51,36 @@ const prepareIdl = (originalIdl) => {
             kind: 'struct',
             fields: [
                 { name: 'authority', type: 'pubkey' },
-                { name: 'initial_price', type: 'u64' },
+                { name: 'initialPrice', type: 'u64' },
                 { name: 'slope', type: 'u64' },
-                { name: 'total_supply', type: 'u64' },
-                { name: 'token_mint', type: 'pubkey' },
+                { name: 'totalSupply', type: 'u64' },
+                { name: 'tokenMint', type: 'pubkey' },
                 { name: 'bump', type: 'u8' }
             ]
         };
+    }
+
+    // Fix any fields that might use snake_case instead of camelCase
+    // This is a common issue between Rust and JS conventions
+    const fixFieldNames = (account) => {
+        if (account && account.type && account.type.fields) {
+            account.type.fields.forEach(field => {
+                // Convert snake_case to camelCase if needed
+                if (field.name.includes('_')) {
+                    const parts = field.name.split('_');
+                    const camelCaseName = parts[0] + parts.slice(1).map(p => p.charAt(0).toUpperCase() + p.slice(1)).join('');
+
+                    // Add both versions to ensure compatibility
+                    const newField = { ...field, name: camelCaseName };
+                    account.type.fields.push(newField);
+                }
+            });
+        }
+    };
+
+    // Apply field name fixes to accounts
+    if (fixedIdl.accounts && Array.isArray(fixedIdl.accounts)) {
+        fixedIdl.accounts.forEach(account => fixFieldNames(account));
     }
 
     // Fix instruction arg types
@@ -36,8 +89,15 @@ const prepareIdl = (originalIdl) => {
             if (instruction.args) {
                 instruction.args.forEach(arg => {
                     // Ensure u64 types are properly set
-                    if (arg.name === 'initialPrice' || arg.name === 'slope') {
+                    if (arg.name === 'initialPrice' || arg.name === 'initial_price' ||
+                        arg.name === 'slope') {
                         arg.type = 'u64';
+                    }
+
+                    // Convert vector types in args
+                    if (typeof arg.type === 'string' && arg.type.startsWith('vec<')) {
+                        const innerType = arg.type.substring(4, arg.type.length - 1);
+                        arg.type = { vec: innerType };
                     }
                 });
             }
@@ -58,10 +118,10 @@ const prepareIdl = (originalIdl) => {
                 kind: "struct",
                 fields: [
                     { name: "authority", type: "pubkey" },
-                    { name: "initial_price", type: "u64" },
+                    { name: "initialPrice", type: "u64" },
                     { name: "slope", type: "u64" },
-                    { name: "total_supply", type: "u64" },
-                    { name: "token_mint", type: "pubkey" },
+                    { name: "totalSupply", type: "u64" },
+                    { name: "tokenMint", type: "pubkey" },
                     { name: "bump", type: "u8" }
                 ]
             }
