@@ -135,10 +135,7 @@ const BuyTokens = () => {
             setTransactionStatus('Preparing transaction...');
 
             // Get the PDA for bonding curve if not already available
-            const bondingCurve = bondingCurvePDA || (await PublicKey.findProgramAddress(
-                [BONDING_CURVE_SEED],
-                program.programId
-            ))[0];
+            const bondingCurve = bondingCurvePDA;
 
             // Convert amount to program expected format (u64)
             const amountBN = new BN(parseFloat(amount) * 1e9); // Assuming 9 decimals

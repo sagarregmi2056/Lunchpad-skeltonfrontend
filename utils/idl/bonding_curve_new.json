@@ -42,6 +42,10 @@
                   118,
                   101
                 ]
+              },
+              {
+                "kind": "account",
+                "path": "token_mint"
               }
             ]
           }
@@ -115,6 +119,10 @@
                   118,
                   101
                 ]
+              },
+              {
+                "kind": "account",
+                "path": "token_mint"
               }
             ]
           }
@@ -178,6 +186,10 @@
                   118,
                   101
                 ]
+              },
+              {
+                "kind": "account",
+                "path": "token_mint"
               }
             ]
           }
@@ -212,6 +224,68 @@
       "args": [
         {
           "name": "amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "update_parameters",
+      "discriminator": [
+        116,
+        107,
+        24,
+        207,
+        101,
+        49,
+        213,
+        77
+      ],
+      "accounts": [
+        {
+          "name": "bonding_curve",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  111,
+                  110,
+                  100,
+                  105,
+                  110,
+                  103,
+                  95,
+                  99,
+                  117,
+                  114,
+                  118,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "token_mint"
+              }
+            ]
+          }
+        },
+        {
+          "name": "authority",
+          "signer": true
+        },
+        {
+          "name": "token_mint"
+        }
+      ],
+      "args": [
+        {
+          "name": "initial_price",
+          "type": "u64"
+        },
+        {
+          "name": "slope",
           "type": "u64"
         }
       ]

@@ -8,6 +8,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "test-contract": "node --experimental-modules --es-module-specifier-resolution=node ./scripts/test-contract.js",
+    "test-simple": "node --experimental-modules --es-module-specifier-resolution=node ./scripts/test-contract-simple.js",
     "create-token": "node scripts/createTokenScript.js"
   },
   "dependencies": {

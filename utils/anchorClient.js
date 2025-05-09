@@ -104,7 +104,7 @@ export const useAnchorProgram = () => {
 
           // Get the bonding curve PDA
           const [bondingCurveAddress] = await PublicKey.findProgramAddress(
-            [BONDING_CURVE_SEED],
+            [BONDING_CURVE_SEED, TOKEN_MINT.toBuffer()],
             program.programId
           );
           
@@ -260,95 +260,109 @@ export const checkPdaDerivation = async (tokenMint) => {
   }
 };
 
-// Initialize the bonding curve (admin only)
+// Initialize bonding curve function
 export const initializeBondingCurve = async (wallet, initialPrice, slope, customTokenMint = null) => {
   try {
-    if (!wallet || !wallet.publicKey) throw new Error('Wallet not connected');
-
-    // Create a proper provider
+    console.log('Initialize bonding curve function called');
+    console.log('Initial price:', initialPrice);
+    console.log('Slope:', slope);
+    
+    if (!wallet || !wallet.publicKey) {
+      throw new Error('Wallet not connected');
+    }
+    
+    const walletPubkey = wallet.publicKey;
+    console.log('Using wallet:', walletPubkey.toString());
+    
+    const connection = new Connection('https://api.devnet.solana.com', 'confirmed');
+    
+    // Create an anchor provider
     const provider = new AnchorProvider(
       connection,
-      wallet,
+      {
+        publicKey: walletPubkey,
+        signTransaction: wallet.signTransaction,
+        signAllTransactions: wallet.signAllTransactions,
+        signMessage: wallet.signMessage
+      },
       AnchorProvider.defaultOptions()
     );
     
+    // Create the program
     const program = new Program(idl, PROGRAM_ID, provider);
-    console.log('Program:', program);
+    console.log('Program created:', program.programId.toString());
     
-    // Use the custom token mint if provided, otherwise use the default
+    // Use the provided token mint or the default one
     const tokenMintToUse = customTokenMint || TOKEN_MINT;
     console.log('Using token mint:', tokenMintToUse.toString());
     
-    // IMPORTANT: The PDA derived in the client does not match what the program expects
-    // The program is looking for: 4BuwHFYtXZo7xtZW5rp4NrQLwCGUfTxkvhuqpJnbstWd
-    // While our client derivation produces: DxoVvbJv4mm1bQ73Wf1UZ1UK7yE9coG9BRv6ZYx7DEdc
+    // Create the bonding curve PDA
+    const [bondingCurveAddress, bump] = await PublicKey.findProgramAddress(
+      [BONDING_CURVE_SEED, tokenMintToUse.toBuffer()],
+      program.programId
+    );
     
-    // We need to use the exact PDA that the program expects
-    const expectedPDA = new PublicKey('4BuwHFYtXZo7xtZW5rp4NrQLwCGUfTxkvhuqpJnbstWd');
-    console.log('Using expected PDA from program:', expectedPDA.toString());
-
     // Check if the account already exists
     try {
-      const accountInfo = await connection.getAccountInfo(expectedPDA);
+      const accountInfo = await connection.getAccountInfo(bondingCurveAddress);
       
       if (accountInfo !== null) {
-        console.log('Bonding curve already initialized:', expectedPDA.toString());
+        console.log('Bonding curve already initialized:', bondingCurveAddress.toString());
         return { 
           success: true, 
           message: 'Bonding curve already exists', 
-          address: expectedPDA.toString(),
-          explorerUrl: getExplorerUrl(expectedPDA.toString())
+          address: bondingCurveAddress.toString(),
+          explorerUrl: getExplorerUrl(bondingCurveAddress.toString())
         };
       }
-    } catch (err) {
-      console.log('Error checking account, will try to create:', err);
+    } catch (error) {
+      console.error('Error checking account info:', error);
+      // Continue with initialization if there was an error checking
     }
-
-    // Convert wallet.publicKey to PublicKey if it's not already
-    const walletPubkey = wallet.publicKey instanceof PublicKey 
-      ? wallet.publicKey 
-      : new PublicKey(wallet.publicKey);
-
-    // Convert initialPrice and slope to BN objects
-    // Make sure these are proper BigNumber objects
-    const initialPriceBN = new BN(initialPrice.toString());
-    const slopeBN = new BN(slope.toString());
-
-    console.log('InitialPrice:', initialPrice, 'as BN:', initialPriceBN.toString());
-    console.log('Slope:', slope, 'as BN:', slopeBN.toString());
-
+    
+    // Convert initialPrice and slope to BN
+    const initialPriceBN = new BN(initialPrice);
+    const slopeBN = new BN(slope);
+    
+    console.log('Preparing to call initialize...');
+    console.log('Initial price BN:', initialPriceBN.toString());
+    console.log('Slope BN:', slopeBN.toString());
+    
+    // Call initialize on the program
     const tx = await program.methods
       .initialize(initialPriceBN, slopeBN)
       .accounts({
-        bondingCurve: expectedPDA,
+        bondingCurve: bondingCurveAddress,
         authority: walletPubkey,
         tokenMint: tokenMintToUse,
         systemProgram: SystemProgram.programId
       })
       .rpc();
-
-    // Save token creation info to localStorage
-    const walletAddress = walletPubkey.toString();
+    
+    console.log('Initialize transaction sent:', tx);
+    
+    // Save the token data to local storage
     const tokenData = {
       mint: tokenMintToUse.toString(),
-      bondingCurve: expectedPDA.toString(),
+      bondingCurve: bondingCurveAddress.toString(),
       initialPrice: initialPrice.toString(),
       slope: slope.toString(),
-      txSignature: tx
+      dateCreated: new Date().toISOString()
     };
-
-    saveCreatedToken(walletAddress, tokenData);
-
+    
+    const saveResult = saveCreatedToken(walletPubkey.toString(), tokenData);
+    console.log('Token data saved:', saveResult);
+    
     return { 
       success: true, 
       signature: tx, 
-      address: expectedPDA.toString(),
+      address: bondingCurveAddress.toString(),
       explorerUrl: getExplorerUrl(tokenMintToUse.toString()),
-      bondingCurveUrl: getExplorerUrl(expectedPDA.toString())
+      bondingCurveUrl: getExplorerUrl(bondingCurveAddress.toString())
     };
   } catch (error) {
     console.error('Error initializing bonding curve:', error);
-    throw error;
+    return { success: false, error: error.message };
   }
 };
 
@@ -439,5 +453,48 @@ export const checkBondingCurveInitialized = async () => {
   } catch (error) {
     console.error('Error checking bonding curve:', error);
     return { initialized: false, error: error.message };
+  }
+};
+
+// Add function to update bonding curve parameters
+export const updateBondingCurveParameters = async (wallet, initialPrice, slope, tokenMint = TOKEN_MINT) => {
+  try {
+    const connection = new Connection('https://api.devnet.solana.com', 'confirmed');
+    
+    const provider = new AnchorProvider(
+      connection,
+      wallet,
+      AnchorProvider.defaultOptions()
+    );
+    
+    const program = new Program(idl, PROGRAM_ID, provider);
+    
+    // Get PDA for bonding curve
+    const [bondingCurvePDA] = await PublicKey.findProgramAddress(
+      [BONDING_CURVE_SEED, tokenMint.toBuffer()],
+      program.programId
+    );
+    
+    // Call the update_parameters instruction
+    const tx = await program.methods
+      .updateParameters(initialPrice, slope)
+      .accounts({
+        bondingCurve: bondingCurvePDA,
+        authority: wallet.publicKey,
+        tokenMint: tokenMint
+      })
+      .rpc();
+    
+    return {
+      success: true,
+      signature: tx,
+      bondingCurve: bondingCurvePDA.toString()
+    };
+  } catch (error) {
+    console.error('Error updating bonding curve parameters:', error);
+    return {
+      success: false,
+      error: error.message
+    };
   }
 }; 

@@ -3,7 +3,8 @@ import BuyTokens from './BuyTokens';
 import SellTokens from './SellTokens';
 import PoolInfo from './PoolInfo';
 import CreateToken from './CreateToken';
-import { IconCoin, IconBuy, IconSell, IconInfo } from './Icons';
+import UpdateParameters from './UpdateParameters';
+import { IconCoin, IconBuy, IconSell, IconInfo, IconSettings } from './Icons';
 
 // Tab definitions
 const TABS = [
@@ -30,6 +31,12 @@ const TABS = [
         label: 'Create',
         icon: IconCoin,
         component: CreateToken
+    },
+    {
+        id: 'admin',
+        label: 'Admin',
+        icon: IconSettings,
+        component: UpdateParameters
     }
 ];
 

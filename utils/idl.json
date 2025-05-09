@@ -1,34 +1,148 @@
 {
-    "version": "0.1.0",
-    "name": "bonding_curve_new",
+    "address": "ExiyW5RS1e4XxjxeZHktijRhnYF6sJYzfmdzU85gFbS4",
+    "metadata": {
+        "name": "bonding_curve_new",
+        "version": "0.1.0",
+        "spec": "0.1.0",
+        "description": "Created with Anchor"
+    },
     "instructions": [
         {
-            "name": "initialize",
+            "name": "buy_tokens",
+            "discriminator": [
+                189,
+                21,
+                230,
+                133,
+                247,
+                2,
+                110,
+                42
+            ],
             "accounts": [
                 {
-                    "name": "bondingCurve",
-                    "isMut": true,
-                    "isSigner": false
+                    "name": "bonding_curve",
+                    "writable": true,
+                    "pda": {
+                        "seeds": [
+                            {
+                                "kind": "const",
+                                "value": [
+                                    98,
+                                    111,
+                                    110,
+                                    100,
+                                    105,
+                                    110,
+                                    103,
+                                    95,
+                                    99,
+                                    117,
+                                    114,
+                                    118,
+                                    101
+                                ]
+                            },
+                            {
+                                "kind": "account",
+                                "path": "token_mint"
+                            }
+                        ]
+                    }
                 },
                 {
                     "name": "authority",
-                    "isMut": true,
-                    "isSigner": true
+                    "writable": true,
+                    "signer": true
                 },
                 {
-                    "name": "tokenMint",
-                    "isMut": false,
-                    "isSigner": false
+                    "name": "buyer",
+                    "writable": true,
+                    "signer": true
                 },
                 {
-                    "name": "systemProgram",
-                    "isMut": false,
-                    "isSigner": false
+                    "name": "buyer_token_account",
+                    "writable": true
+                },
+                {
+                    "name": "token_mint",
+                    "writable": true
+                },
+                {
+                    "name": "token_program",
+                    "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+                },
+                {
+                    "name": "system_program",
+                    "address": "11111111111111111111111111111111"
                 }
             ],
             "args": [
                 {
-                    "name": "initialPrice",
+                    "name": "amount",
+                    "type": "u64"
+                }
+            ]
+        },
+        {
+            "name": "initialize",
+            "discriminator": [
+                175,
+                175,
+                109,
+                31,
+                13,
+                152,
+                155,
+                237
+            ],
+            "accounts": [
+                {
+                    "name": "bonding_curve",
+                    "writable": true,
+                    "pda": {
+                        "seeds": [
+                            {
+                                "kind": "const",
+                                "value": [
+                                    98,
+                                    111,
+                                    110,
+                                    100,
+                                    105,
+                                    110,
+                                    103,
+                                    95,
+                                    99,
+                                    117,
+                                    114,
+                                    118,
+                                    101
+                                ]
+                            },
+                            {
+                                "kind": "account",
+                                "path": "token_mint"
+                            }
+                        ]
+                    }
+                },
+                {
+                    "name": "authority",
+                    "writable": true,
+                    "signer": true
+                },
+                {
+                    "name": "token_mint"
+                },
+                {
+                    "name": "system_program",
+                    "address": "11111111111111111111111111111111"
+                }
+            ],
+            "args": [
+                {
+                    "name": "initial_price",
                     "type": "u64"
                 },
                 {
@@ -38,42 +152,73 @@
             ]
         },
         {
-            "name": "buyTokens",
+            "name": "sell_tokens",
+            "discriminator": [
+                114,
+                242,
+                25,
+                12,
+                62,
+                126,
+                92,
+                2
+            ],
             "accounts": [
                 {
-                    "name": "bondingCurve",
-                    "isMut": true,
-                    "isSigner": false
+                    "name": "bonding_curve",
+                    "writable": true,
+                    "pda": {
+                        "seeds": [
+                            {
+                                "kind": "const",
+                                "value": [
+                                    98,
+                                    111,
+                                    110,
+                                    100,
+                                    105,
+                                    110,
+                                    103,
+                                    95,
+                                    99,
+                                    117,
+                                    114,
+                                    118,
+                                    101
+                                ]
+                            },
+                            {
+                                "kind": "account",
+                                "path": "token_mint"
+                            }
+                        ]
+                    }
                 },
                 {
                     "name": "authority",
-                    "isMut": true,
-                    "isSigner": true
+                    "writable": true,
+                    "signer": true
                 },
                 {
-                    "name": "buyer",
-                    "isMut": true,
-                    "isSigner": true
+                    "name": "seller",
+                    "writable": true,
+                    "signer": true
                 },
                 {
-                    "name": "buyerTokenAccount",
-                    "isMut": true,
-                    "isSigner": false
+                    "name": "seller_token_account",
+                    "writable": true
                 },
                 {
-                    "name": "tokenMint",
-                    "isMut": true,
-                    "isSigner": false
+                    "name": "token_mint",
+                    "writable": true
                 },
                 {
-                    "name": "tokenProgram",
-                    "isMut": false,
-                    "isSigner": false
+                    "name": "token_program",
+                    "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
                 },
                 {
-                    "name": "systemProgram",
-                    "isMut": false,
-                    "isSigner": false
+                    "name": "system_program",
+                    "address": "11111111111111111111111111111111"
                 }
             ],
             "args": [
@@ -84,47 +229,63 @@
             ]
         },
         {
-            "name": "sellTokens",
+            "name": "update_parameters",
+            "discriminator": [
+                116,
+                107,
+                24,
+                207,
+                101,
+                49,
+                213,
+                77
+            ],
             "accounts": [
                 {
-                    "name": "bondingCurve",
-                    "isMut": true,
-                    "isSigner": false
+                    "name": "bonding_curve",
+                    "writable": true,
+                    "pda": {
+                        "seeds": [
+                            {
+                                "kind": "const",
+                                "value": [
+                                    98,
+                                    111,
+                                    110,
+                                    100,
+                                    105,
+                                    110,
+                                    103,
+                                    95,
+                                    99,
+                                    117,
+                                    114,
+                                    118,
+                                    101
+                                ]
+                            },
+                            {
+                                "kind": "account",
+                                "path": "token_mint"
+                            }
+                        ]
+                    }
                 },
                 {
                     "name": "authority",
-                    "isMut": true,
-                    "isSigner": true
+                    "signer": true
                 },
                 {
-                    "name": "seller",
-                    "isMut": true,
-                    "isSigner": true
-                },
-                {
-                    "name": "sellerTokenAccount",
-                    "isMut": true,
-                    "isSigner": false
-                },
-                {
-                    "name": "tokenMint",
-                    "isMut": true,
-                    "isSigner": false
-                },
-                {
-                    "name": "tokenProgram",
-                    "isMut": false,
-                    "isSigner": false
-                },
-                {
-                    "name": "systemProgram",
-                    "isMut": false,
-                    "isSigner": false
+                    "name": "token_mint"
                 }
             ],
             "args": [
                 {
-                    "name": "amount",
+                    "name": "initial_price",
+                    "type": "u64"
+                },
+                {
+                    "name": "slope",
                     "type": "u64"
                 }
             ]
@@ -133,38 +294,23 @@
     "accounts": [
         {
             "name": "BondingCurve",
-            "type": {
-                "kind": "struct",
-                "fields": [
-                    {
-                        "name": "authority",
-                        "type": "publicKey"
-                    },
-                    {
-                        "name": "tokenMint",
-                        "type": "publicKey"
-                    },
-                    {
-                        "name": "initialPrice",
-                        "type": "u64"
-                    },
-                    {
-                        "name": "slope",
-                        "type": "u64"
-                    },
-                    {
-                        "name": "totalSupply",
-                        "type": "u64"
-                    }
-                ]
-            }
+            "discriminator": [
+                23,
+                183,
+                248,
+                55,
+                96,
+                216,
+                172,
+                96
+            ]
         }
     ],
     "errors": [
         {
             "code": 6000,
-            "name": "InvalidAmount",
-            "msg": "Amount must be greater than 0"
+            "name": "InvalidParameters",
+            "msg": "Invalid parameters provided"
         },
         {
             "code": 6001,
@@ -180,6 +326,45 @@
             "code": 6003,
             "name": "InvalidTokenAccount",
             "msg": "Invalid token account"
+        },
+        {
+            "code": 6004,
+            "name": "InvalidAmount",
+            "msg": "Amount must be greater than 0"
+        }
+    ],
+    "types": [
+        {
+            "name": "BondingCurve",
+            "type": {
+                "kind": "struct",
+                "fields": [
+                    {
+                        "name": "authority",
+                        "type": "pubkey"
+                    },
+                    {
+                        "name": "initial_price",
+                        "type": "u64"
+                    },
+                    {
+                        "name": "slope",
+                        "type": "u64"
+                    },
+                    {
+                        "name": "total_supply",
+                        "type": "u64"
+                    },
+                    {
+                        "name": "token_mint",
+                        "type": "pubkey"
+                    },
+                    {
+                        "name": "bump",
+                        "type": "u8"
+                    }
+                ]
+            }
         }
     ]
 }
