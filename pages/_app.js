@@ -5,7 +5,8 @@ import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
 import { clusterApiUrl } from '@solana/web3.js';
 import { useEffect, useState } from 'react';
 import Head from 'next/head';
-import { ChakraProvider, extendTheme } from '@chakra-ui/react';
+import { ChakraProvider } from '@chakra-ui/react';
+import { extendTheme } from '@chakra-ui/theme-utils';
 import '../styles/globals.css';
 import '../styles/wallet-adapter.css';
 

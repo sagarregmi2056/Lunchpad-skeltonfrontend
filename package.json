@@ -16,6 +16,8 @@
     "@chakra-ui/alert": "^2.2.2",
     "@chakra-ui/radio": "^2.1.2",
     "@chakra-ui/react": "^3.17.0",
+    "@chakra-ui/theme": "^3.4.6",
+    "@chakra-ui/theme-utils": "^2.0.21",
     "@chakra-ui/toast": "^7.0.2",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
