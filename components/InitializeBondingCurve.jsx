@@ -3,7 +3,8 @@ import { PublicKey, LAMPORTS_PER_SOL } from '@solana/web3.js';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { BN } from '@project-serum/anchor';
-import { initializeBondingCurve, getUserCreatedTokens } from '../utils/anchorClient';
+import { getUserCreatedTokens } from '../utils/anchorClient';
+import { initializeWithRawInstructions } from '../utils/specializedInitialize';
 import { IconInfo, IconSuccess, IconError, LoadingSpinner } from './Icons';
 
 const InitializeBondingCurve = () => {
@@ -119,8 +120,8 @@ const InitializeBondingCurve = () => {
             console.log('Price is BN instance:', priceInLamports instanceof BN);
             console.log('Slope is BN instance:', slopeInLamports instanceof BN);
 
-            // Initialize the bonding curve
-            const curveResult = await initializeBondingCurve(
+            // Initialize the bonding curve using raw instructions
+            const curveResult = await initializeWithRawInstructions(
                 wallet,
                 priceInLamports,
                 slopeInLamports,
