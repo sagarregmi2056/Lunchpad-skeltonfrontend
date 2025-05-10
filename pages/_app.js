@@ -5,9 +5,25 @@ import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
 import { clusterApiUrl } from '@solana/web3.js';
 import { useEffect, useState } from 'react';
 import Head from 'next/head';
-import { ChakraProvider } from '@chakra-ui/react';
+import { ChakraProvider, extendTheme } from '@chakra-ui/react';
 import '../styles/globals.css';
 import '../styles/wallet-adapter.css';
+
+// Extend the theme to include custom colors, fonts, etc
+const theme = extendTheme({
+    config: {
+        initialColorMode: 'dark',
+        useSystemColorMode: false,
+    },
+    styles: {
+        global: {
+            body: {
+                bg: 'gray.900',
+                color: 'white',
+            },
+        },
+    },
+});
 
 export default function MyApp({ Component, pageProps }) {
     const [mounted, setMounted] = useState(false);
@@ -29,13 +45,13 @@ export default function MyApp({ Component, pageProps }) {
 
     // Only render wallet components on client-side
     const renderApp = (
-        <ConnectionProvider endpoint={endpoint}>
-            <WalletProvider wallets={wallets} autoConnect={false} onError={(error) => {
-                console.error('Wallet error:', error);
-                // Don't show alerts to users
-            }}>
-                <WalletModalProvider>
-                    <ChakraProvider>
+        <ChakraProvider theme={theme}>
+            <ConnectionProvider endpoint={endpoint}>
+                <WalletProvider wallets={wallets} autoConnect={false} onError={(error) => {
+                    console.error('Wallet error:', error);
+                    // Don't show alerts to users
+                }}>
+                    <WalletModalProvider>
                         <Head>
                             <meta name="viewport" content="width=device-width, initial-scale=1.0" />
                             <meta name="theme-color" content="#4F46E5" />
@@ -45,10 +61,10 @@ export default function MyApp({ Component, pageProps }) {
                             <meta property="twitter:card" content="summary_large_image" />
                         </Head>
                         <Component {...pageProps} />
-                    </ChakraProvider>
-                </WalletModalProvider>
-            </WalletProvider>
-        </ConnectionProvider>
+                    </WalletModalProvider>
+                </WalletProvider>
+            </ConnectionProvider>
+        </ChakraProvider>
     );
 
     return mounted ? renderApp : <div className="h-screen bg-gray-900"></div>;
