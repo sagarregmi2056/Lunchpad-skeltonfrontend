@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Head from 'next/head';
 import Layout from '../components/Layout';
 import InitializeBondingCurve from '../components/InitializeBondingCurve';
-import { Box, Heading, Alert, AlertIcon, Button, Input, Text, Stack, VStack, useToast, Tabs, TabList, TabPanels, Tab, TabPanel, Radio, RadioGroup } from '@chakra-ui/react';
+import { Box, Heading, Alert, Button, Input, Text, Stack, VStack, Tabs, TabList, TabPanels, Tab, TabPanel, useToast, AlertIcon, Radio, RadioGroup } from '@chakra-ui/react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { BN } from '@project-serum/anchor';
 import { initializeBondingCurve } from '../utils/anchorClient';
