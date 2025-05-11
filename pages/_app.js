@@ -5,7 +5,8 @@ import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
 import { clusterApiUrl } from '@solana/web3.js';
 import { useEffect, useState } from 'react';
 import Head from 'next/head';
-import { ChakraProvider, theme } from '@chakra-ui/react';
+import { ChakraProvider } from '@chakra-ui/react';
+import { extendTheme } from '@chakra-ui/react';
 import '../styles/globals.css';
 import '../styles/wallet-adapter.css';
 
@@ -18,12 +19,8 @@ const colors = {
     },
 };
 
-const customTheme = {
-    ...theme,
-    colors: {
-        ...theme.colors,
-        ...colors,
-    },
+const customTheme = extendTheme({
+    colors,
     config: {
         initialColorMode: 'dark',
         useSystemColorMode: false,
@@ -36,7 +33,7 @@ const customTheme = {
             },
         },
     },
-};
+});
 
 export default function MyApp({ Component, pageProps }) {
     const [mounted, setMounted] = useState(false);
