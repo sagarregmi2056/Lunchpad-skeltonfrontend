@@ -31,7 +31,7 @@ A decentralized exchange (DEX) and launchpad platform built on Solana, featuring
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/solana-launchpad-dex.git
+   git clone https://github.com/sagarregmi2056/solana-launchpad-dex.git
    cd solana-launchpad-dex
    ```
 

@@ -5,7 +5,7 @@ import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
 import { clusterApiUrl } from '@solana/web3.js';
 import { useEffect, useState } from 'react';
 import Head from 'next/head';
-import { ChakraProvider, ColorModeScript, extendTheme } from '@chakra-ui/react';
+import { ChakraProvider, theme } from '@chakra-ui/react';
 import '../styles/globals.css';
 import '../styles/wallet-adapter.css';
 
@@ -18,21 +18,25 @@ const colors = {
     },
 };
 
-const theme = extendTheme({
-    colors,
+const customTheme = {
+    ...theme,
+    colors: {
+        ...theme.colors,
+        ...colors,
+    },
     config: {
         initialColorMode: 'dark',
         useSystemColorMode: false,
     },
     styles: {
-        global: (props) => ({
+        global: {
             body: {
                 bg: 'gray.900',
                 color: 'white',
             },
-        }),
+        },
     },
-});
+};
 
 export default function MyApp({ Component, pageProps }) {
     const [mounted, setMounted] = useState(false);
@@ -53,8 +57,7 @@ export default function MyApp({ Component, pageProps }) {
 
     const renderApp = (
         <>
-            <ColorModeScript initialColorMode={theme.config.initialColorMode} />
-            <ChakraProvider theme={theme} resetCSS>
+            <ChakraProvider theme={customTheme} resetCSS>
                 <ConnectionProvider endpoint={endpoint}>
                     <WalletProvider wallets={wallets} autoConnect={false} onError={(error) => {
                         console.error('Wallet error:', error);
