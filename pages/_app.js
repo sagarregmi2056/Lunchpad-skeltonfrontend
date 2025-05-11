@@ -9,29 +9,6 @@ import { ChakraProvider } from '@chakra-ui/react';
 import '../styles/globals.css';
 import '../styles/wallet-adapter.css';
 
-// Define the custom theme configuration
-const theme = {
-    config: {
-        initialColorMode: 'dark',
-        useSystemColorMode: false,
-    },
-    colors: {
-        brand: {
-            900: '#1a365d',
-            800: '#153e75',
-            700: '#2a69ac',
-        },
-    },
-    styles: {
-        global: {
-            body: {
-                bg: 'gray.900',
-                color: 'white',
-            },
-        },
-    },
-};
-
 export default function MyApp({ Component, pageProps }) {
     const [mounted, setMounted] = useState(false);
 
@@ -51,7 +28,7 @@ export default function MyApp({ Component, pageProps }) {
 
     const renderApp = (
         <>
-            <ChakraProvider theme={theme} resetCSS>
+            <ChakraProvider>
                 <ConnectionProvider endpoint={endpoint}>
                     <WalletProvider wallets={wallets} autoConnect={false} onError={(error) => {
                         console.error('Wallet error:', error);
@@ -73,5 +50,5 @@ export default function MyApp({ Component, pageProps }) {
         </>
     );
 
-    return mounted ? renderApp : <div className="h-screen bg-gray.900"></div>;
+    return mounted ? renderApp : <div style={{ height: '100vh', backgroundColor: '#1A202C' }}></div>;
 }
