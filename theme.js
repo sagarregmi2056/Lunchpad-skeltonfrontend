@@ -4,12 +4,13 @@ const theme = extendTheme({
   config: {
     initialColorMode: 'dark',
     useSystemColorMode: false,
+    cssVarPrefix: 'chakra',
   },
   styles: {
     global: {
-      body: {
-        bg: 'gray.900',
-        color: 'white',
+      'html, body': {
+        background: 'none',
+        color: 'inherit',
       }
     }
   },
