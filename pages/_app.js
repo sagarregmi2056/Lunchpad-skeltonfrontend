@@ -5,36 +5,10 @@ import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
 import { clusterApiUrl } from '@solana/web3.js';
 import { useEffect, useState } from 'react';
 import Head from 'next/head';
-import { ChakraProvider, extendTheme } from '@chakra-ui/react';
+import { ChakraProvider } from '@chakra-ui/react';
 import '../styles/globals.css';
 import '../styles/wallet-adapter.css';
 
-// 2. Extend the theme to include custom colors, fonts, etc
-const colors = {
-  brand: {
-    900: '#1a365d',
-    800: '#153e75',
-    700: '#2a69ac',
-  },
-};
-
-const theme = extendTheme({
-  colors,
-  config: {
-    initialColorMode: 'dark',
-    useSystemColorMode: false,
-  },
-  styles: {
-    global: {
-      'html, body': {
-        backgroundColor: 'gray.900',
-        color: 'white',
-      },
-    },
-  },
-});
-
-// 3. Pass the `theme` prop to the `ChakraProvider`
 export default function MyApp({ Component, pageProps }) {
     const [mounted, setMounted] = useState(false);
 
@@ -53,7 +27,7 @@ export default function MyApp({ Component, pageProps }) {
     }, []);
 
     const renderApp = (
-        <ChakraProvider theme={theme}>
+        <ChakraProvider>
             <ConnectionProvider endpoint={endpoint}>
                 <WalletProvider wallets={wallets} autoConnect={false} onError={(error) => {
                     console.error('Wallet error:', error);
