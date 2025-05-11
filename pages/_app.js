@@ -5,12 +5,18 @@ import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
 import { clusterApiUrl } from '@solana/web3.js';
 import { useEffect, useState } from 'react';
 import Head from 'next/head';
-import { ChakraProvider } from '@chakra-ui/react';
-import { extendTheme } from '@chakra-ui/react';
+import { ChakraProvider, createStandaloneToast } from '@chakra-ui/react';
 import '../styles/globals.css';
 import '../styles/wallet-adapter.css';
 
-// Extend the theme to include custom colors, fonts, etc
+const { ToastContainer } = createStandaloneToast();
+
+// Define the custom theme configuration
+const config = {
+    initialColorMode: 'dark',
+    useSystemColorMode: false,
+};
+
 const colors = {
     brand: {
         900: '#1a365d',
@@ -19,21 +25,14 @@ const colors = {
     },
 };
 
-const customTheme = extendTheme({
-    colors,
-    config: {
-        initialColorMode: 'dark',
-        useSystemColorMode: false,
-    },
-    styles: {
-        global: {
-            body: {
-                bg: 'gray.900',
-                color: 'white',
-            },
+const styles = {
+    global: {
+        body: {
+            bg: 'gray.900',
+            color: 'white',
         },
     },
-});
+};
 
 export default function MyApp({ Component, pageProps }) {
     const [mounted, setMounted] = useState(false);
@@ -54,7 +53,7 @@ export default function MyApp({ Component, pageProps }) {
 
     const renderApp = (
         <>
-            <ChakraProvider theme={customTheme} resetCSS>
+            <ChakraProvider theme={{ config, colors, styles }} resetCSS>
                 <ConnectionProvider endpoint={endpoint}>
                     <WalletProvider wallets={wallets} autoConnect={false} onError={(error) => {
                         console.error('Wallet error:', error);
@@ -73,6 +72,7 @@ export default function MyApp({ Component, pageProps }) {
                     </WalletProvider>
                 </ConnectionProvider>
             </ChakraProvider>
+            <ToastContainer />
         </>
     );
 
