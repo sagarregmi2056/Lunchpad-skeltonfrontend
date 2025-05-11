@@ -5,31 +5,29 @@ import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
 import { clusterApiUrl } from '@solana/web3.js';
 import { useEffect, useState } from 'react';
 import Head from 'next/head';
-import { ChakraProvider, createStandaloneToast } from '@chakra-ui/react';
+import { ChakraProvider } from '@chakra-ui/react';
 import '../styles/globals.css';
 import '../styles/wallet-adapter.css';
 
-const { ToastContainer } = createStandaloneToast();
-
 // Define the custom theme configuration
-const config = {
-    initialColorMode: 'dark',
-    useSystemColorMode: false,
-};
-
-const colors = {
-    brand: {
-        900: '#1a365d',
-        800: '#153e75',
-        700: '#2a69ac',
+const theme = {
+    config: {
+        initialColorMode: 'dark',
+        useSystemColorMode: false,
     },
-};
-
-const styles = {
-    global: {
-        body: {
-            bg: 'gray.900',
-            color: 'white',
+    colors: {
+        brand: {
+            900: '#1a365d',
+            800: '#153e75',
+            700: '#2a69ac',
+        },
+    },
+    styles: {
+        global: {
+            body: {
+                bg: 'gray.900',
+                color: 'white',
+            },
         },
     },
 };
@@ -53,7 +51,7 @@ export default function MyApp({ Component, pageProps }) {
 
     const renderApp = (
         <>
-            <ChakraProvider theme={{ config, colors, styles }} resetCSS>
+            <ChakraProvider theme={theme} resetCSS>
                 <ConnectionProvider endpoint={endpoint}>
                     <WalletProvider wallets={wallets} autoConnect={false} onError={(error) => {
                         console.error('Wallet error:', error);
@@ -72,9 +70,8 @@ export default function MyApp({ Component, pageProps }) {
                     </WalletProvider>
                 </ConnectionProvider>
             </ChakraProvider>
-            <ToastContainer />
         </>
     );
 
-    return mounted ? renderApp : <div className="h-screen bg-gray-900"></div>;
+    return mounted ? renderApp : <div className="h-screen bg-gray.900"></div>;
 }
